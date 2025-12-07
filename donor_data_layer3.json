@@ -1,0 +1,428 @@
+{
+  "generated": "2025-12-07",
+  "description": "Layer 3: External context data for F.E.A.S.T. performance benchmarking",
+  "layer2_reference": "donor_data_layer2.json",
+  "purpose": "Overlay organizational performance against sector benchmarks and economic conditions",
+
+  "static_benchmarks": {
+    "description": "Industry benchmarks for nonprofit donor performance comparison",
+
+    "retention_rates": {
+      "source": "Fundraising Effectiveness Project (FEP) / AFP",
+      "all_nonprofits": {
+        "overall_retention": 43.6,
+        "first_year_retention": 19.3,
+        "repeat_donor_retention": 60.0,
+        "recapture_rate": 4.1,
+        "notes": "Based on FEP 2023 data; retention has declined from 45.5% (2020)"
+      },
+      "by_organization_size": {
+        "small_under_1m": { "retention": 46.0, "notes": "Organizations with annual revenue under $1M" },
+        "medium_1m_10m": { "retention": 43.0, "notes": "Organizations with $1M-$10M annual revenue" },
+        "large_over_10m": { "retention": 42.0, "notes": "Larger orgs often see lower retention" }
+      },
+      "by_donor_type": {
+        "major_donors_1000_plus": { "retention": 68.0 },
+        "mid_level_250_999": { "retention": 55.0 },
+        "grassroots_under_250": { "retention": 38.0 },
+        "first_time_donors": { "retention": 19.3 },
+        "monthly_recurring": { "retention": 80.0 }
+      }
+    },
+
+    "health_sector_benchmarks": {
+      "source": "Blackbaud Institute, M+R Benchmarks, Health nonprofit associations",
+      "retention_rate": 42.0,
+      "average_gift": 128.0,
+      "online_giving_share": 32.0,
+      "recurring_donor_share": 18.0,
+      "donor_upgrade_rate": 8.5,
+      "lapsed_reactivation_rate": 4.0,
+      "email_response_rate": 0.08,
+      "direct_mail_response_rate": 4.5,
+      "acquisition_cost_per_donor": 125.0,
+      "donor_lifetime_value_avg": 450.0,
+      "notes": "Health/medical charities typically see lower retention than disaster relief but higher than arts/culture"
+    },
+
+    "giving_usa_trends": {
+      "source": "Giving USA Foundation / Indiana University Lilly Family School",
+      "annual_data": {
+        "2018": {
+          "total_giving_billions": 427.71,
+          "yoy_change_percent": -1.7,
+          "inflation_adjusted_change": -3.3,
+          "individual_giving_share": 68.0,
+          "health_sector_billions": 40.78,
+          "notes": "Stock market volatility affected year-end giving"
+        },
+        "2019": {
+          "total_giving_billions": 449.64,
+          "yoy_change_percent": 5.1,
+          "inflation_adjusted_change": 2.4,
+          "individual_giving_share": 69.0,
+          "health_sector_billions": 41.46,
+          "notes": "Strong economy boosted giving"
+        },
+        "2020": {
+          "total_giving_billions": 471.44,
+          "yoy_change_percent": 5.1,
+          "inflation_adjusted_change": 3.8,
+          "individual_giving_share": 69.0,
+          "health_sector_billions": 42.12,
+          "notes": "COVID surge in giving; stimulus checks drove donations"
+        },
+        "2021": {
+          "total_giving_billions": 516.65,
+          "yoy_change_percent": 9.6,
+          "inflation_adjusted_change": 4.0,
+          "individual_giving_share": 67.0,
+          "health_sector_billions": 46.11,
+          "notes": "Record giving year; stock market gains, crypto donations"
+        },
+        "2022": {
+          "total_giving_billions": 499.33,
+          "yoy_change_percent": -3.4,
+          "inflation_adjusted_change": -10.5,
+          "individual_giving_share": 64.0,
+          "health_sector_billions": 42.35,
+          "notes": "Inflation eroded giving; stock market decline affected donors"
+        },
+        "2023": {
+          "total_giving_billions": 506.46,
+          "yoy_change_percent": 1.4,
+          "inflation_adjusted_change": -2.1,
+          "individual_giving_share": 67.0,
+          "health_sector_billions": 43.05,
+          "notes": "Modest recovery; donor fatigue from crisis giving"
+        },
+        "2024": {
+          "total_giving_billions": 520.0,
+          "yoy_change_percent": 2.7,
+          "inflation_adjusted_change": 0.5,
+          "individual_giving_share": 68.0,
+          "health_sector_billions": 44.20,
+          "notes": "Estimated; gradual recovery continues"
+        }
+      }
+    },
+
+    "channel_benchmarks": {
+      "source": "M+R Benchmarks 2024, Blackbaud Institute",
+      "online_giving": {
+        "share_of_total": 14.0,
+        "mobile_share_of_online": 33.0,
+        "average_online_gift": 134.0,
+        "monthly_sustainer_value_multiplier": 4.2
+      },
+      "direct_mail": {
+        "response_rate": 4.5,
+        "average_gift": 107.0,
+        "cost_per_dollar_raised": 0.25
+      },
+      "email": {
+        "open_rate": 17.0,
+        "click_rate": 1.2,
+        "conversion_rate": 0.08
+      },
+      "peer_to_peer": {
+        "average_participant_raises": 568.0,
+        "average_individual_gift": 58.0
+      }
+    }
+  },
+
+  "economic_timeline": {
+    "description": "Major economic events and indicators affecting donor behavior 2018-2025",
+
+    "major_events": [
+      {
+        "date": "2018-02",
+        "event": "Stock Market Correction",
+        "description": "Dow drops 10% in early February",
+        "donor_impact": "moderate",
+        "impact_notes": "Brief dip in major donor confidence; quick recovery"
+      },
+      {
+        "date": "2018-12",
+        "event": "Year-End Market Volatility",
+        "description": "S&P 500 drops 14% in Q4",
+        "donor_impact": "moderate",
+        "impact_notes": "Reduced year-end giving from stock-based donors"
+      },
+      {
+        "date": "2020-03",
+        "event": "COVID-19 Pandemic Declaration",
+        "description": "WHO declares global pandemic; US national emergency",
+        "donor_impact": "high",
+        "impact_notes": "Initial freeze on giving, followed by surge in emergency donations"
+      },
+      {
+        "date": "2020-04",
+        "event": "CARES Act Stimulus",
+        "description": "$1,200 stimulus checks distributed; $300 charitable deduction for non-itemizers",
+        "donor_impact": "positive",
+        "impact_notes": "Many donors gave portion of stimulus; new deduction incentivized smaller gifts"
+      },
+      {
+        "date": "2020-06",
+        "event": "Social Justice Movement Surge",
+        "description": "Significant increase in giving to racial equity causes",
+        "donor_impact": "mixed",
+        "impact_notes": "Redirected giving from health to social justice causes for some donors"
+      },
+      {
+        "date": "2021-03",
+        "event": "American Rescue Plan",
+        "description": "$1,400 stimulus checks; enhanced charitable deduction",
+        "donor_impact": "positive",
+        "impact_notes": "Continued donor generosity from stimulus funds"
+      },
+      {
+        "date": "2021-11",
+        "event": "Inflation Surge Begins",
+        "description": "CPI reaches 6.8% - highest in 40 years",
+        "donor_impact": "negative",
+        "impact_notes": "Reduced discretionary income; lower gift sizes begin"
+      },
+      {
+        "date": "2022-03",
+        "event": "Federal Reserve Rate Hikes Begin",
+        "description": "First of multiple rate increases to combat inflation",
+        "donor_impact": "moderate",
+        "impact_notes": "Stock market decline reduces wealth effect giving"
+      },
+      {
+        "date": "2022-06",
+        "event": "Peak Inflation",
+        "description": "CPI reaches 9.1% - highest since 1981",
+        "donor_impact": "high_negative",
+        "impact_notes": "Significant impact on mid-level donors; grassroots giving declined"
+      },
+      {
+        "date": "2022-10",
+        "event": "Stock Market Bottom",
+        "description": "S&P 500 reaches year low, down 25% from peak",
+        "donor_impact": "moderate",
+        "impact_notes": "Major donors paused stock donations; wait-and-see approach"
+      },
+      {
+        "date": "2023-03",
+        "event": "Banking Crisis",
+        "description": "SVB, Signature Bank failures; regional bank concerns",
+        "donor_impact": "moderate",
+        "impact_notes": "Brief uncertainty; nonprofit reserves concerns"
+      },
+      {
+        "date": "2023-07",
+        "event": "Inflation Moderates",
+        "description": "CPI drops to 3.2%",
+        "donor_impact": "slight_positive",
+        "impact_notes": "Consumer confidence begins recovery; giving stabilizes"
+      },
+      {
+        "date": "2024-01",
+        "event": "Strong Job Market",
+        "description": "Unemployment remains under 4%",
+        "donor_impact": "positive",
+        "impact_notes": "Improved household finances support giving recovery"
+      },
+      {
+        "date": "2024-09",
+        "event": "Fed Begins Rate Cuts",
+        "description": "First rate cut signals economic normalization",
+        "donor_impact": "positive",
+        "impact_notes": "Improved market sentiment; major donors more active"
+      },
+      {
+        "date": "2025-01",
+        "event": "Post-Election Uncertainty",
+        "description": "Policy changes and economic uncertainty",
+        "donor_impact": "mixed",
+        "impact_notes": "Some donors wait to assess impact; others accelerate giving"
+      }
+    ],
+
+    "consumer_confidence_index": {
+      "source": "Conference Board Consumer Confidence Index (1985=100)",
+      "annual_averages": {
+        "2018": { "value": 128.2, "trend": "high", "notes": "Strong economy, tax cuts" },
+        "2019": { "value": 128.0, "trend": "stable_high", "notes": "Pre-pandemic peak" },
+        "2020": { "value": 101.0, "trend": "volatile", "notes": "COVID shock Q2, partial recovery Q3-Q4" },
+        "2021": { "value": 112.7, "trend": "recovering", "notes": "Vaccine optimism, reopening" },
+        "2022": { "value": 104.5, "trend": "declining", "notes": "Inflation concerns dominate" },
+        "2023": { "value": 106.1, "trend": "stabilizing", "notes": "Gradual improvement" },
+        "2024": { "value": 110.0, "trend": "improving", "notes": "Labor market strength supports confidence" },
+        "2025": { "value": 108.0, "trend": "uncertain", "notes": "Mixed signals early in year" }
+      },
+      "quarterly_data": {
+        "2020-Q1": 130.4,
+        "2020-Q2": 85.7,
+        "2020-Q3": 93.8,
+        "2020-Q4": 87.1,
+        "2021-Q1": 96.4,
+        "2021-Q2": 127.3,
+        "2021-Q3": 115.2,
+        "2021-Q4": 111.9,
+        "2022-Q1": 107.6,
+        "2022-Q2": 103.2,
+        "2022-Q3": 107.8,
+        "2022-Q4": 108.3,
+        "2023-Q1": 104.0,
+        "2023-Q2": 109.7,
+        "2023-Q3": 106.1,
+        "2023-Q4": 101.0,
+        "2024-Q1": 104.8,
+        "2024-Q2": 100.9,
+        "2024-Q3": 99.2,
+        "2024-Q4": 109.5,
+        "2025-Q1": 108.0
+      }
+    },
+
+    "inflation_data": {
+      "source": "US Bureau of Labor Statistics CPI-U",
+      "annual_averages": {
+        "2018": { "cpi_percent": 2.4, "category": "normal" },
+        "2019": { "cpi_percent": 1.8, "category": "low" },
+        "2020": { "cpi_percent": 1.2, "category": "low" },
+        "2021": { "cpi_percent": 4.7, "category": "elevated" },
+        "2022": { "cpi_percent": 8.0, "category": "high" },
+        "2023": { "cpi_percent": 4.1, "category": "elevated" },
+        "2024": { "cpi_percent": 2.9, "category": "moderating" },
+        "2025": { "cpi_percent": 2.5, "category": "normalizing", "notes": "Projected" }
+      },
+      "monthly_peaks": [
+        { "date": "2022-06", "value": 9.1, "notes": "40-year high" },
+        { "date": "2022-03", "value": 8.5, "notes": "Initial shock" },
+        { "date": "2021-12", "value": 7.0, "notes": "Surge begins" }
+      ]
+    },
+
+    "unemployment_rate": {
+      "source": "US Bureau of Labor Statistics",
+      "annual_averages": {
+        "2018": 3.9,
+        "2019": 3.7,
+        "2020": 8.1,
+        "2021": 5.4,
+        "2022": 3.6,
+        "2023": 3.6,
+        "2024": 4.0,
+        "2025": 4.1
+      },
+      "key_moments": [
+        { "date": "2020-04", "value": 14.7, "notes": "COVID peak unemployment" },
+        { "date": "2020-02", "value": 3.5, "notes": "Pre-pandemic low" },
+        { "date": "2023-04", "value": 3.4, "notes": "Post-pandemic low" }
+      ]
+    },
+
+    "stock_market_performance": {
+      "source": "S&P 500 annual returns",
+      "annual_returns": {
+        "2018": { "return_percent": -4.4, "year_end_value": 2507 },
+        "2019": { "return_percent": 31.5, "year_end_value": 3231 },
+        "2020": { "return_percent": 18.4, "year_end_value": 3756 },
+        "2021": { "return_percent": 28.7, "year_end_value": 4766 },
+        "2022": { "return_percent": -18.1, "year_end_value": 3840 },
+        "2023": { "return_percent": 26.3, "year_end_value": 4770 },
+        "2024": { "return_percent": 25.0, "year_end_value": 5960 }
+      },
+      "notes": "Stock performance strongly correlates with major donor giving and stock-based donations"
+    }
+  },
+
+  "feast_comparison_context": {
+    "description": "Framework for comparing F.E.A.S.T. performance against benchmarks",
+
+    "interpretation_guide": {
+      "retention_rate": {
+        "excellent": "> 55%",
+        "good": "45-55%",
+        "average": "40-45%",
+        "below_average": "35-40%",
+        "needs_attention": "< 35%"
+      },
+      "first_year_retention": {
+        "excellent": "> 30%",
+        "good": "25-30%",
+        "average": "19-25%",
+        "below_average": "15-19%",
+        "needs_attention": "< 15%"
+      },
+      "recurring_donor_share": {
+        "excellent": "> 25%",
+        "good": "18-25%",
+        "average": "12-18%",
+        "below_average": "8-12%",
+        "needs_attention": "< 8%"
+      },
+      "average_gift": {
+        "context": "Compare against $128 health sector benchmark",
+        "notes": "Higher is generally better but depends on donor base composition"
+      }
+    },
+
+    "economic_adjustment_factors": {
+      "description": "Suggested adjustments when comparing to benchmarks based on economic conditions",
+      "high_inflation_period": {
+        "years": [2022, 2023],
+        "retention_adjustment": -3,
+        "gift_size_adjustment_percent": -5,
+        "notes": "Expect lower performance during high inflation periods"
+      },
+      "economic_growth_period": {
+        "years": [2019, 2021],
+        "retention_adjustment": 2,
+        "gift_size_adjustment_percent": 5,
+        "notes": "Expect stronger performance during growth periods"
+      },
+      "crisis_response_period": {
+        "years": [2020],
+        "new_donor_surge_expected": true,
+        "retention_decline_following_year_expected": true,
+        "notes": "COVID created unusual giving patterns not reflective of normal trends"
+      }
+    }
+  },
+
+  "data_sources": [
+    {
+      "name": "Fundraising Effectiveness Project (FEP)",
+      "organization": "AFP / Association of Fundraising Professionals",
+      "url": "https://afpglobal.org/FundraisingEffectivenessProject",
+      "data_type": "Donor retention benchmarks"
+    },
+    {
+      "name": "Giving USA",
+      "organization": "Giving USA Foundation / Indiana University",
+      "url": "https://givingusa.org",
+      "data_type": "Annual giving trends and sector breakdowns"
+    },
+    {
+      "name": "M+R Benchmarks",
+      "organization": "M+R Strategic Services",
+      "url": "https://mrbenchmarks.com",
+      "data_type": "Online fundraising and digital engagement benchmarks"
+    },
+    {
+      "name": "Blackbaud Institute",
+      "organization": "Blackbaud",
+      "url": "https://institute.blackbaud.com",
+      "data_type": "Charitable giving reports and benchmarks"
+    },
+    {
+      "name": "Consumer Confidence Index",
+      "organization": "The Conference Board",
+      "url": "https://www.conference-board.org",
+      "data_type": "Monthly consumer confidence surveys"
+    },
+    {
+      "name": "Bureau of Labor Statistics",
+      "organization": "US Department of Labor",
+      "url": "https://www.bls.gov",
+      "data_type": "CPI inflation and unemployment data"
+    }
+  ]
+}
