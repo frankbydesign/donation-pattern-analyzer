@@ -169,6 +169,17 @@
             height: 400px;
         }
 
+        .chart-guidance {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            line-height: 1.5;
+            margin-bottom: 1rem;
+            padding: 0.5rem 0.75rem;
+            background: rgba(0, 0, 0, 0.02);
+            border-left: 2px solid var(--primary-light);
+            border-radius: 0 4px 4px 0;
+        }
+
         .grid-2 {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
@@ -500,6 +511,9 @@
             <div class="grid-2" style="margin-top: 1.5rem;">
                 <div class="card">
                     <div class="card-title">Revenue Concentration by Top Donors</div>
+                    <p class="chart-guidance">
+                        Shows what percentage of total revenue comes from your top N donors. A steep curve indicates high concentration risk—if the line reaches 50%+ with just 10 donors, your revenue is dangerously dependent on a few individuals. Use this to prioritize donor diversification and plan for major donor attrition scenarios.
+                    </p>
                     <div class="chart-container">
                         <canvas id="concentrationChart"></canvas>
                     </div>
@@ -540,6 +554,9 @@
             <div class="grid-2">
                 <div class="card">
                     <div class="card-title">Donor Segments (RFM-Based)</div>
+                    <p class="chart-guidance">
+                        Segments donors by Recency, Frequency, and Monetary value. Champions and Loyal Customers (green/blue) are your core—aim for 30%+ here. Red/orange segments (At Risk, Lost) need immediate attention. Use this to tailor outreach strategies and allocate stewardship resources by segment.
+                    </p>
                     <div class="chart-container">
                         <canvas id="segmentChart"></canvas>
                     </div>
@@ -634,8 +651,8 @@
 
             <div class="card">
                 <div class="card-title">Cohort Retention Analysis</div>
-                <p style="color: var(--text-muted); margin-bottom: 1rem; font-size: 0.9rem;">
-                    Tracking how well each acquisition cohort retains over subsequent years.
+                <p class="chart-guidance">
+                    Each line tracks donors acquired in a specific year through their giving journey. Read left-to-right: Year 1 shows first-year retention (industry benchmark: 20-25%), with gradual improvement expected in later years. Lines trending upward indicate improving loyalty; flat or declining lines signal retention problems. Compare cohorts to identify which acquisition strategies produced the most loyal donors.
                 </p>
                 <div class="chart-container tall">
                     <canvas id="cohortChart"></canvas>
@@ -697,6 +714,9 @@
                 </div>
                 <div class="card">
                     <div class="card-title">Consumer Confidence Index</div>
+                    <p class="chart-guidance">
+                        Tracks public economic sentiment over time—a leading indicator for charitable giving. Values above 100 signal optimism (good for major gift asks); below 80 suggests caution. Overlay this with your giving trends to understand external factors affecting donations and time campaigns for favorable conditions.
+                    </p>
                     <div class="chart-container">
                         <canvas id="consumerConfidenceChart"></canvas>
                     </div>
