@@ -1,0 +1,1665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>F.E.A.S.T. Donor Analytics Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #2c5282;
+            --primary-light: #4299e1;
+            --secondary: #38a169;
+            --warning: #d69e2e;
+            --danger: #e53e3e;
+            --bg-light: #f7fafc;
+            --bg-card: #ffffff;
+            --text-dark: #1a202c;
+            --text-muted: #718096;
+            --border: #e2e8f0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg-light);
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        header h1 {
+            font-size: 1.75rem;
+            font-weight: 600;
+        }
+
+        header p {
+            opacity: 0.9;
+            font-size: 0.95rem;
+            margin-top: 0.25rem;
+        }
+
+        nav {
+            background: var(--bg-card);
+            padding: 0 2rem;
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        nav ul {
+            display: flex;
+            list-style: none;
+            gap: 0;
+            overflow-x: auto;
+        }
+
+        nav a {
+            display: block;
+            padding: 1rem 1.25rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.9rem;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        nav a:hover, nav a.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        main {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        section {
+            margin-bottom: 2rem;
+            display: none;
+        }
+
+        section.active {
+            display: block;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: var(--primary);
+        }
+
+        .card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 1.5rem;
+        }
+
+        .card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 0.8rem;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .metric-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border-left: 4px solid var(--primary);
+        }
+
+        .metric-card.success { border-left-color: var(--secondary); }
+        .metric-card.warning { border-left-color: var(--warning); }
+        .metric-card.danger { border-left-color: var(--danger); }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+
+        .metric-label {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+
+        .metric-detail {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+
+        .chart-container.tall {
+            height: 400px;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .alert {
+            padding: 1rem 1.25rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+
+        .alert-warning {
+            background: #fffbeb;
+            border: 1px solid #fcd34d;
+            color: #92400e;
+        }
+
+        .alert-danger {
+            background: #fef2f2;
+            border: 1px solid #fca5a5;
+            color: #991b1b;
+        }
+
+        .alert-info {
+            background: #eff6ff;
+            border: 1px solid #93c5fd;
+            color: #1e40af;
+        }
+
+        .alert-icon {
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        th, td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: var(--bg-light);
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+        }
+
+        tr:hover {
+            background: var(--bg-light);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-success { background: #c6f6d5; color: #22543d; }
+        .badge-warning { background: #fef3c7; color: #92400e; }
+        .badge-danger { background: #fed7d7; color: #9b2c2c; }
+        .badge-info { background: #bee3f8; color: #2a4365; }
+
+        .progress-bar {
+            height: 8px;
+            background: var(--bg-light);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .benchmark-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .benchmark-row:last-child {
+            border-bottom: none;
+        }
+
+        .benchmark-label {
+            font-weight: 500;
+        }
+
+        .benchmark-values {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .benchmark-value {
+            text-align: right;
+        }
+
+        .benchmark-value span {
+            display: block;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 12px;
+            max-width: 800px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 2rem;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-muted);
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-light);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-dark);
+        }
+
+        .btn-outline:hover {
+            background: var(--bg-light);
+        }
+
+        .clickable {
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .clickable:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-muted);
+        }
+
+        .loading::after {
+            content: '';
+            display: block;
+            width: 40px;
+            height: 40px;
+            margin: 1rem auto;
+            border: 3px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .comparison-good { color: var(--secondary); }
+        .comparison-bad { color: var(--danger); }
+        .comparison-neutral { color: var(--text-muted); }
+
+        .donor-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .segment-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+
+        @media (max-width: 768px) {
+            main { padding: 1rem; }
+            .grid-2, .grid-3 { grid-template-columns: 1fr; }
+            .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+            nav a { padding: 0.75rem 1rem; font-size: 0.8rem; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>F.E.A.S.T. Donor Analytics Dashboard</h1>
+        <p>Data-driven insights for nonprofit fundraising success</p>
+    </header>
+
+    <nav>
+        <ul>
+            <li><a href="#executive" class="active" data-section="executive">Executive Summary</a></li>
+            <li><a href="#concentration" data-section="concentration">Concentration Risk</a></li>
+            <li><a href="#health" data-section="health">Donor Health</a></li>
+            <li><a href="#patterns" data-section="patterns">Giving Patterns</a></li>
+            <li><a href="#temporal" data-section="temporal">Temporal Trends</a></li>
+            <li><a href="#context" data-section="context">External Context</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <div id="loading" class="loading">Loading donor data...</div>
+
+        <!-- Executive Summary Section -->
+        <section id="executive" class="active">
+            <h2 class="section-title">Executive Summary</h2>
+
+            <div id="alerts-container"></div>
+
+            <div class="metrics-grid" id="key-metrics"></div>
+
+            <div class="grid-2" style="margin-top: 1.5rem;">
+                <div class="card">
+                    <div class="card-title">Revenue by Year</div>
+                    <div class="chart-container">
+                        <canvas id="yearlyRevenueChart"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Donor Acquisition & Retention</div>
+                    <div class="chart-container">
+                        <canvas id="donorGrowthChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Quick Health Indicators</div>
+                <div class="grid-3" id="health-indicators"></div>
+            </div>
+        </section>
+
+        <!-- Concentration Risk Section -->
+        <section id="concentration">
+            <h2 class="section-title">Concentration Risk Analysis</h2>
+
+            <div class="metrics-grid" id="concentration-metrics"></div>
+
+            <div class="grid-2" style="margin-top: 1.5rem;">
+                <div class="card">
+                    <div class="card-title">Revenue Concentration by Top Donors</div>
+                    <div class="chart-container">
+                        <canvas id="concentrationChart"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Giving Level Distribution</div>
+                    <div class="chart-container">
+                        <canvas id="givingLevelChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Top 20 Donors by Lifetime Value</div>
+                <div class="donor-list">
+                    <table id="top-donors-table">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Donor ID</th>
+                                <th>Total Given</th>
+                                <th>Gifts</th>
+                                <th>Avg Gift</th>
+                                <th>Status</th>
+                                <th>RFM Score</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Donor Health Section -->
+        <section id="health">
+            <h2 class="section-title">Donor Health & Segmentation</h2>
+
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-title">Donor Segments (RFM-Based)</div>
+                    <div class="chart-container">
+                        <canvas id="segmentChart"></canvas>
+                    </div>
+                    <div class="segment-legend" id="segment-legend"></div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Lapse Risk Distribution</div>
+                    <div class="chart-container">
+                        <canvas id="riskChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">At-Risk High-Value Donors</div>
+                <p style="color: var(--text-muted); margin-bottom: 1rem; font-size: 0.9rem;">
+                    These donors have contributed significantly but show signs of lapsing. Priority for retention outreach.
+                </p>
+                <div class="donor-list">
+                    <table id="at-risk-table">
+                        <thead>
+                            <tr>
+                                <th>Donor ID</th>
+                                <th>Lifetime Value</th>
+                                <th>Days Since Last Gift</th>
+                                <th>Risk Level</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Recurring Donors</div>
+                <p style="color: var(--text-muted); margin-bottom: 1rem; font-size: 0.9rem;">
+                    Donors with consistent giving patterns - your most reliable revenue source.
+                </p>
+                <div class="donor-list">
+                    <table id="recurring-table">
+                        <thead>
+                            <tr>
+                                <th>Donor ID</th>
+                                <th>Pattern</th>
+                                <th>Total Gifts</th>
+                                <th>Total Amount</th>
+                                <th>Avg Gift</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Giving Patterns Section -->
+        <section id="patterns">
+            <h2 class="section-title">Giving Patterns Analysis</h2>
+
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-title">Monthly Giving Patterns</div>
+                    <div class="chart-container">
+                        <canvas id="monthlyChart"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Day of Week Patterns</div>
+                    <div class="chart-container">
+                        <canvas id="weekdayChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Channel Performance</div>
+                <div class="grid-2" id="channel-stats"></div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Gift Amount Distribution</div>
+                <div class="chart-container tall">
+                    <canvas id="distributionChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Temporal Trends Section -->
+        <section id="temporal">
+            <h2 class="section-title">Temporal Trends & Retention</h2>
+
+            <div class="card">
+                <div class="card-title">Cohort Retention Analysis</div>
+                <p style="color: var(--text-muted); margin-bottom: 1rem; font-size: 0.9rem;">
+                    Tracking how well each acquisition cohort retains over subsequent years.
+                </p>
+                <div class="chart-container tall">
+                    <canvas id="cohortChart"></canvas>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-title">Upgrade/Downgrade Trends</div>
+                    <div class="chart-container">
+                        <canvas id="upgradeChart"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Year-over-Year Metrics</div>
+                    <div id="yoy-metrics"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Retention Cohort Detail</div>
+                <div style="overflow-x: auto;">
+                    <table id="cohort-table">
+                        <thead>
+                            <tr>
+                                <th>Cohort</th>
+                                <th>Acquired</th>
+                                <th>Year 1</th>
+                                <th>Year 2</th>
+                                <th>Year 3</th>
+                                <th>Year 4</th>
+                                <th>Year 5</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- External Context Section -->
+        <section id="context">
+            <h2 class="section-title">External Context & Benchmarking</h2>
+
+            <div class="card">
+                <div class="card-title">Performance vs. Industry Benchmarks</div>
+                <p style="color: var(--text-muted); margin-bottom: 1rem; font-size: 0.9rem;">
+                    Comparing F.E.A.S.T. metrics against health sector and all-nonprofit benchmarks.
+                </p>
+                <div id="benchmark-comparison"></div>
+            </div>
+
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-title">Giving USA Trends vs. F.E.A.S.T.</div>
+                    <div class="chart-container">
+                        <canvas id="givingUsaChart"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Consumer Confidence Index</div>
+                    <div class="chart-container">
+                        <canvas id="consumerConfidenceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Economic Events Timeline</div>
+                <div id="events-timeline"></div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Interpretation Guide</div>
+                <div class="grid-3" id="interpretation-guide"></div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal for drill-down -->
+    <div class="modal-overlay" id="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modal-title">Details</h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div id="modal-content"></div>
+        </div>
+    </div>
+
+    <script>
+        // Global data stores
+        let layer1Data = null;
+        let layer2Data = null;
+        let layer3Data = null;
+
+        // Chart instances
+        const charts = {};
+
+        // Format currency
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(value);
+        }
+
+        // Format percentage
+        function formatPercent(value) {
+            return value.toFixed(1) + '%';
+        }
+
+        // Format number with commas
+        function formatNumber(value) {
+            return new Intl.NumberFormat('en-US').format(value);
+        }
+
+        // Navigation handling
+        document.querySelectorAll('nav a').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const section = link.dataset.section;
+
+                document.querySelectorAll('nav a').forEach(l => l.classList.remove('active'));
+                link.classList.add('active');
+
+                document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
+                document.getElementById(section).classList.add('active');
+            });
+        });
+
+        // Modal functions
+        function openModal(title, content) {
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-content').innerHTML = content;
+            document.getElementById('modal-overlay').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('modal-overlay').classList.remove('active');
+        }
+
+        document.getElementById('modal-overlay').addEventListener('click', (e) => {
+            if (e.target.id === 'modal-overlay') closeModal();
+        });
+
+        // Load all data
+        async function loadData() {
+            try {
+                const [l1, l2, l3] = await Promise.all([
+                    fetch('donor_data_layer1.json').then(r => r.json()),
+                    fetch('donor_data_layer2.json').then(r => r.json()),
+                    fetch('donor_data_layer3.json').then(r => r.json())
+                ]);
+
+                layer1Data = l1;
+                layer2Data = l2;
+                layer3Data = l3;
+
+                document.getElementById('loading').style.display = 'none';
+                renderDashboard();
+            } catch (error) {
+                document.getElementById('loading').innerHTML =
+                    '<p style="color: var(--danger);">Error loading data. Please ensure JSON files are in the same directory.</p>';
+                console.error('Error loading data:', error);
+            }
+        }
+
+        // Main render function
+        function renderDashboard() {
+            renderExecutiveSummary();
+            renderConcentrationRisk();
+            renderDonorHealth();
+            renderGivingPatterns();
+            renderTemporalTrends();
+            renderExternalContext();
+        }
+
+        // Executive Summary
+        function renderExecutiveSummary() {
+            const summary = layer2Data.executive_summary;
+            const alerts = summary.alerts || [];
+
+            // Render alerts
+            const alertsHtml = alerts.map(alert => `
+                <div class="alert alert-${alert.severity === 'high' ? 'danger' : 'warning'}">
+                    <span class="alert-icon">${alert.severity === 'high' ? '!' : '!'}</span>
+                    <span>${alert.message}</span>
+                </div>
+            `).join('');
+            document.getElementById('alerts-container').innerHTML = alertsHtml;
+
+            // Key metrics
+            const metrics = summary.key_metrics;
+            const health = summary.health_indicators;
+            const opps = summary.opportunities;
+
+            document.getElementById('key-metrics').innerHTML = `
+                <div class="metric-card">
+                    <div class="metric-value">${formatCurrency(metrics.total_revenue)}</div>
+                    <div class="metric-label">Total Revenue</div>
+                </div>
+                <div class="metric-card success">
+                    <div class="metric-value">${formatNumber(metrics.total_donors)}</div>
+                    <div class="metric-label">Total Donors</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">${formatCurrency(metrics.avg_gift_size)}</div>
+                    <div class="metric-label">Average Gift</div>
+                </div>
+                <div class="metric-card ${metrics.active_donor_rate < 30 ? 'warning' : 'success'}">
+                    <div class="metric-value">${formatPercent(metrics.active_donor_rate)}</div>
+                    <div class="metric-label">Active Donor Rate</div>
+                </div>
+                <div class="metric-card success">
+                    <div class="metric-value">${formatNumber(health.champion_donors)}</div>
+                    <div class="metric-label">Champion Donors</div>
+                    <div class="metric-detail">${formatPercent(health.champion_percentage)} of total</div>
+                </div>
+                <div class="metric-card danger">
+                    <div class="metric-value">${formatNumber(health.total_at_risk)}</div>
+                    <div class="metric-label">At Risk Donors</div>
+                    <div class="metric-detail">${formatNumber(health.high_value_at_risk)} high-value</div>
+                </div>
+            `;
+
+            // Health indicators
+            document.getElementById('health-indicators').innerHTML = `
+                <div>
+                    <div class="benchmark-label">Reactivation Pool</div>
+                    <div style="font-size: 1.5rem; font-weight: 600; color: var(--primary);">${formatNumber(opps.reactivation_pool)}</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted);">Lapsed donors eligible for re-engagement</div>
+                </div>
+                <div>
+                    <div class="benchmark-label">Stewardship Priority</div>
+                    <div style="font-size: 1.5rem; font-weight: 600; color: var(--secondary);">${formatNumber(opps.stewardship_priority)}</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted);">High-value donors needing attention</div>
+                </div>
+                <div>
+                    <div class="benchmark-label">Lapsed Donors</div>
+                    <div style="font-size: 1.5rem; font-weight: 600; color: var(--danger);">${formatNumber(health.lapsed_donors)}</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted);">No gift in 18+ months</div>
+                </div>
+            `;
+
+            // Yearly revenue chart
+            const yearlyData = layer2Data.giving_patterns.yearly_trends;
+            const years = Object.keys(yearlyData).sort();
+
+            charts.yearlyRevenue = new Chart(document.getElementById('yearlyRevenueChart'), {
+                type: 'bar',
+                data: {
+                    labels: years,
+                    datasets: [{
+                        label: 'Total Revenue',
+                        data: years.map(y => yearlyData[y].total_amount),
+                        backgroundColor: 'rgba(66, 153, 225, 0.8)',
+                        borderColor: 'rgba(66, 153, 225, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => formatCurrency(ctx.raw)
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: (value) => formatCurrency(value)
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Donor growth chart
+            charts.donorGrowth = new Chart(document.getElementById('donorGrowthChart'), {
+                type: 'line',
+                data: {
+                    labels: years,
+                    datasets: [{
+                        label: 'Unique Donors',
+                        data: years.map(y => yearlyData[y].unique_donors),
+                        borderColor: 'rgba(56, 161, 105, 1)',
+                        backgroundColor: 'rgba(56, 161, 105, 0.1)',
+                        fill: true,
+                        tension: 0.3
+                    }, {
+                        label: 'Total Gifts',
+                        data: years.map(y => yearlyData[y].gift_count),
+                        borderColor: 'rgba(66, 153, 225, 1)',
+                        backgroundColor: 'rgba(66, 153, 225, 0.1)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        // Concentration Risk
+        function renderConcentrationRisk() {
+            const rfmScores = layer2Data.rfm_analysis.scores;
+            const givingLevels = layer2Data.value_analysis.giving_levels;
+
+            // Sort donors by monetary value
+            const sortedDonors = Object.entries(rfmScores)
+                .map(([id, data]) => ({ id, ...data }))
+                .sort((a, b) => b.monetary - a.monetary);
+
+            const totalRevenue = layer1Data.summary.total_revenue;
+
+            // Calculate concentration metrics
+            const top10Revenue = sortedDonors.slice(0, 10).reduce((sum, d) => sum + d.monetary, 0);
+            const top20Revenue = sortedDonors.slice(0, 20).reduce((sum, d) => sum + d.monetary, 0);
+            const top50Revenue = sortedDonors.slice(0, 50).reduce((sum, d) => sum + d.monetary, 0);
+
+            document.getElementById('concentration-metrics').innerHTML = `
+                <div class="metric-card ${top10Revenue / totalRevenue > 0.3 ? 'danger' : 'warning'}">
+                    <div class="metric-value">${formatPercent(top10Revenue / totalRevenue * 100)}</div>
+                    <div class="metric-label">Top 10 Donors</div>
+                    <div class="metric-detail">${formatCurrency(top10Revenue)} of ${formatCurrency(totalRevenue)}</div>
+                </div>
+                <div class="metric-card warning">
+                    <div class="metric-value">${formatPercent(top20Revenue / totalRevenue * 100)}</div>
+                    <div class="metric-label">Top 20 Donors</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">${formatPercent(top50Revenue / totalRevenue * 100)}</div>
+                    <div class="metric-label">Top 50 Donors</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">${formatNumber(sortedDonors.length)}</div>
+                    <div class="metric-label">Total Donors</div>
+                </div>
+            `;
+
+            // Concentration chart
+            const concentrationData = [1, 5, 10, 20, 50, 100].map(n => {
+                const revenue = sortedDonors.slice(0, n).reduce((sum, d) => sum + d.monetary, 0);
+                return (revenue / totalRevenue * 100);
+            });
+
+            charts.concentration = new Chart(document.getElementById('concentrationChart'), {
+                type: 'line',
+                data: {
+                    labels: ['Top 1', 'Top 5', 'Top 10', 'Top 20', 'Top 50', 'Top 100'],
+                    datasets: [{
+                        label: '% of Total Revenue',
+                        data: concentrationData,
+                        borderColor: 'rgba(229, 62, 62, 1)',
+                        backgroundColor: 'rgba(229, 62, 62, 0.1)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => formatPercent(ctx.raw)
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: { callback: (v) => v + '%' }
+                        }
+                    }
+                }
+            });
+
+            // Giving levels chart
+            const levels = Object.entries(givingLevels);
+            charts.givingLevel = new Chart(document.getElementById('givingLevelChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: levels.map(([name, data]) => `${name} (${data.range})`),
+                    datasets: [{
+                        data: levels.map(([, data]) => data.total),
+                        backgroundColor: [
+                            'rgba(160, 174, 192, 0.8)',
+                            'rgba(66, 153, 225, 0.8)',
+                            'rgba(56, 161, 105, 0.8)',
+                            'rgba(214, 158, 46, 0.8)',
+                            'rgba(229, 62, 62, 0.8)',
+                            'rgba(128, 90, 213, 0.8)'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'right' },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => {
+                                    const level = levels[ctx.dataIndex];
+                                    return `${formatCurrency(ctx.raw)} (${level[1].count} donors)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Top donors table
+            const tbody = document.querySelector('#top-donors-table tbody');
+            tbody.innerHTML = sortedDonors.slice(0, 20).map((donor, i) => {
+                const status = donor.recency_days < 365 ? 'Active' : donor.recency_days < 548 ? 'Lapsing' : 'Lapsed';
+                const statusClass = status === 'Active' ? 'success' : status === 'Lapsing' ? 'warning' : 'danger';
+                return `
+                    <tr class="clickable" onclick="showDonorDetail('${donor.id}')">
+                        <td>${i + 1}</td>
+                        <td>${donor.id}</td>
+                        <td><strong>${formatCurrency(donor.monetary)}</strong></td>
+                        <td>${donor.frequency}</td>
+                        <td>${formatCurrency(donor.monetary / donor.frequency)}</td>
+                        <td><span class="badge badge-${statusClass}">${status}</span></td>
+                        <td>${donor.rfm_combined} (${donor.rfm_total})</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Show donor detail modal
+        function showDonorDetail(donorId) {
+            const rfm = layer2Data.rfm_analysis.scores[donorId];
+            const donor = layer1Data.donors.find(d => d.donor_id === donorId);
+
+            if (!donor || !rfm) return;
+
+            const content = `
+                <div class="grid-2" style="gap: 1rem; margin-bottom: 1rem;">
+                    <div>
+                        <strong>Total Given:</strong> ${formatCurrency(rfm.monetary)}<br>
+                        <strong>Total Gifts:</strong> ${rfm.frequency}<br>
+                        <strong>First Gift:</strong> ${donor.first_gift}<br>
+                        <strong>Last Gift:</strong> ${donor.last_gift}
+                    </div>
+                    <div>
+                        <strong>Days Since Last Gift:</strong> ${rfm.recency_days}<br>
+                        <strong>RFM Score:</strong> ${rfm.rfm_combined} (Total: ${rfm.rfm_total})<br>
+                        <strong>Channel:</strong> ${donor.channel}
+                    </div>
+                </div>
+                <h4 style="margin: 1rem 0 0.5rem;">Recent Gift History</h4>
+                <table>
+                    <thead><tr><th>Date</th><th>Amount</th></tr></thead>
+                    <tbody>
+                        ${donor.gifts.slice(-10).reverse().map(g => `
+                            <tr><td>${g.date}</td><td>${formatCurrency(g.amount)}</td></tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+
+            openModal(`Donor: ${donorId}`, content);
+        }
+
+        // Donor Health
+        function renderDonorHealth() {
+            const segments = layer2Data.rfm_analysis.segments;
+            const riskDist = layer2Data.lapse_risk_analysis.risk_distribution;
+            const recurring = layer2Data.recurring_donor_analysis.recurring_donors;
+            const rfmScores = layer2Data.rfm_analysis.scores;
+
+            // Segment chart
+            const segmentData = [
+                { name: 'Champions', count: segments.champions?.count || 0, color: '#38a169' },
+                { name: 'Loyal', count: segments.loyal_customers?.count || 0, color: '#4299e1' },
+                { name: 'Potential', count: segments.potential_loyalists?.count || 0, color: '#48bb78' },
+                { name: 'New', count: segments.new_customers?.count || 0, color: '#63b3ed' },
+                { name: 'At Risk', count: segments.at_risk?.count || 0, color: '#d69e2e' },
+                { name: 'Needs Attention', count: segments.need_attention?.count || 0, color: '#ed8936' },
+                { name: 'Hibernating', count: segments.hibernating?.count || 0, color: '#a0aec0' },
+                { name: 'Lost', count: segments.lost?.count || 0, color: '#e53e3e' }
+            ].filter(s => s.count > 0);
+
+            charts.segment = new Chart(document.getElementById('segmentChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: segmentData.map(s => s.name),
+                    datasets: [{
+                        data: segmentData.map(s => s.count),
+                        backgroundColor: segmentData.map(s => s.color)
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+
+            // Segment legend
+            document.getElementById('segment-legend').innerHTML = segmentData.map(s => `
+                <div class="legend-item">
+                    <div class="legend-color" style="background: ${s.color}"></div>
+                    <span>${s.name}: ${formatNumber(s.count)}</span>
+                </div>
+            `).join('');
+
+            // Risk chart
+            charts.risk = new Chart(document.getElementById('riskChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['Low Risk', 'Medium Risk', 'High Risk'],
+                    datasets: [{
+                        data: [riskDist.low, riskDist.medium, riskDist.high],
+                        backgroundColor: ['rgba(56, 161, 105, 0.8)', 'rgba(214, 158, 46, 0.8)', 'rgba(229, 62, 62, 0.8)']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            // At-risk donors table
+            const highRiskDonors = layer2Data.lapse_risk_analysis.high_risk_donors || [];
+            const atRiskWithData = highRiskDonors
+                .map(id => ({ id, ...rfmScores[id] }))
+                .filter(d => d.monetary)
+                .sort((a, b) => b.monetary - a.monetary)
+                .slice(0, 20);
+
+            document.querySelector('#at-risk-table tbody').innerHTML = atRiskWithData.map(donor => `
+                <tr>
+                    <td>${donor.id}</td>
+                    <td>${formatCurrency(donor.monetary)}</td>
+                    <td>${donor.recency_days} days</td>
+                    <td><span class="badge badge-danger">High</span></td>
+                    <td><button class="btn btn-outline" onclick="showDonorDetail('${donor.id}')">View</button></td>
+                </tr>
+            `).join('');
+
+            // Recurring donors table
+            document.querySelector('#recurring-table tbody').innerHTML = recurring.slice(0, 15).map(donor => `
+                <tr class="clickable" onclick="showDonorDetail('${donor.donor_id}')">
+                    <td>${donor.donor_id}</td>
+                    <td><span class="badge badge-info">${donor.pattern}</span></td>
+                    <td>${donor.total_recurring_gifts}</td>
+                    <td>${formatCurrency(donor.total_recurring_amount)}</td>
+                    <td>${formatCurrency(donor.avg_gift)}</td>
+                </tr>
+            `).join('');
+        }
+
+        // Giving Patterns
+        function renderGivingPatterns() {
+            const monthly = layer2Data.giving_patterns.monthly_patterns;
+            const weekday = layer2Data.giving_patterns.weekday_patterns;
+            const channels = layer2Data.channel_performance;
+            const valueAnalysis = layer2Data.value_analysis;
+
+            // Monthly chart
+            const months = ['January', 'February', 'March', 'April', 'May', 'June',
+                           'July', 'August', 'September', 'October', 'November', 'December'];
+
+            charts.monthly = new Chart(document.getElementById('monthlyChart'), {
+                type: 'bar',
+                data: {
+                    labels: months.map(m => m.slice(0, 3)),
+                    datasets: [{
+                        label: 'Total Amount',
+                        data: months.map(m => monthly[m]?.total_amount || 0),
+                        backgroundColor: 'rgba(66, 153, 225, 0.8)',
+                        yAxisID: 'y'
+                    }, {
+                        label: 'Gift Count',
+                        data: months.map(m => monthly[m]?.gift_count || 0),
+                        type: 'line',
+                        borderColor: 'rgba(56, 161, 105, 1)',
+                        backgroundColor: 'transparent',
+                        yAxisID: 'y1'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            position: 'left',
+                            ticks: { callback: (v) => formatCurrency(v) }
+                        },
+                        y1: {
+                            type: 'linear',
+                            position: 'right',
+                            grid: { drawOnChartArea: false }
+                        }
+                    }
+                }
+            });
+
+            // Weekday chart
+            const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+            charts.weekday = new Chart(document.getElementById('weekdayChart'), {
+                type: 'bar',
+                data: {
+                    labels: days.map(d => d.slice(0, 3)),
+                    datasets: [{
+                        label: 'Avg Gift',
+                        data: days.map(d => weekday[d]?.avg_gift || 0),
+                        backgroundColor: 'rgba(128, 90, 213, 0.8)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { callback: (v) => '$' + v }
+                        }
+                    }
+                }
+            });
+
+            // Channel stats
+            document.getElementById('channel-stats').innerHTML = Object.entries(channels).map(([channel, data]) => `
+                <div style="padding: 1rem; background: var(--bg-light); border-radius: 8px;">
+                    <h4 style="text-transform: capitalize; margin-bottom: 0.5rem;">${channel}</h4>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; font-size: 0.9rem;">
+                        <div>
+                            <div style="color: var(--text-muted);">Donors</div>
+                            <div style="font-weight: 600;">${formatNumber(data.donor_count)}</div>
+                        </div>
+                        <div>
+                            <div style="color: var(--text-muted);">Total</div>
+                            <div style="font-weight: 600;">${formatCurrency(data.total_amount)}</div>
+                        </div>
+                        <div>
+                            <div style="color: var(--text-muted);">Avg Gift</div>
+                            <div style="font-weight: 600;">${formatCurrency(data.avg_gift)}</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            // Distribution chart
+            const levels = valueAnalysis.giving_levels;
+            charts.distribution = new Chart(document.getElementById('distributionChart'), {
+                type: 'bar',
+                data: {
+                    labels: Object.entries(levels).map(([name, data]) => `${name}\n(${data.range})`),
+                    datasets: [{
+                        label: 'Number of Donors',
+                        data: Object.values(levels).map(l => l.count),
+                        backgroundColor: 'rgba(66, 153, 225, 0.8)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        // Temporal Trends
+        function renderTemporalTrends() {
+            const cohortData = layer2Data.retention_analysis.cohort_retention;
+            const upgradeData = layer2Data.upgrade_downgrade_analysis;
+            const yearlyTrends = layer2Data.giving_patterns.yearly_trends;
+
+            // Cohort retention chart
+            const cohorts = Object.keys(cohortData).filter(y => y !== '2025').sort();
+            const datasets = cohorts.map((cohort, i) => {
+                const rates = cohortData[cohort].retention_rates;
+                const years = Object.keys(rates).sort();
+                const data = years.map(y => rates[y].retention_rate);
+
+                const colors = [
+                    'rgba(66, 153, 225, 1)',
+                    'rgba(56, 161, 105, 1)',
+                    'rgba(214, 158, 46, 1)',
+                    'rgba(229, 62, 62, 1)',
+                    'rgba(128, 90, 213, 1)',
+                    'rgba(237, 137, 54, 1)',
+                    'rgba(160, 174, 192, 1)'
+                ];
+
+                return {
+                    label: cohort,
+                    data: data,
+                    borderColor: colors[i % colors.length],
+                    backgroundColor: 'transparent',
+                    tension: 0.3
+                };
+            });
+
+            const maxYears = Math.max(...cohorts.map(c => Object.keys(cohortData[c].retention_rates).length));
+            const labels = Array.from({ length: maxYears }, (_, i) => `Year ${i + 1}`);
+
+            charts.cohort = new Chart(document.getElementById('cohortChart'), {
+                type: 'line',
+                data: { labels, datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 50,
+                            ticks: { callback: (v) => v + '%' }
+                        }
+                    }
+                }
+            });
+
+            // Upgrade/downgrade chart
+            const upYears = Object.keys(upgradeData).sort();
+            charts.upgrade = new Chart(document.getElementById('upgradeChart'), {
+                type: 'bar',
+                data: {
+                    labels: upYears,
+                    datasets: [{
+                        label: 'Upgrades',
+                        data: upYears.map(y => upgradeData[y].upgraded),
+                        backgroundColor: 'rgba(56, 161, 105, 0.8)'
+                    }, {
+                        label: 'Downgrades',
+                        data: upYears.map(y => -upgradeData[y].downgraded),
+                        backgroundColor: 'rgba(229, 62, 62, 0.8)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } },
+                    scales: {
+                        x: { stacked: true },
+                        y: { stacked: true }
+                    }
+                }
+            });
+
+            // YoY metrics
+            const yoyYears = Object.keys(yearlyTrends).sort();
+            let yoyHtml = '<div style="max-height: 300px; overflow-y: auto;">';
+            for (let i = 1; i < yoyYears.length; i++) {
+                const prev = yearlyTrends[yoyYears[i - 1]];
+                const curr = yearlyTrends[yoyYears[i]];
+                const revenueChange = ((curr.total_amount - prev.total_amount) / prev.total_amount * 100);
+                const donorChange = ((curr.unique_donors - prev.unique_donors) / prev.unique_donors * 100);
+
+                yoyHtml += `
+                    <div class="benchmark-row">
+                        <div class="benchmark-label">${yoyYears[i - 1]} to ${yoyYears[i]}</div>
+                        <div class="benchmark-values">
+                            <div class="benchmark-value">
+                                <span class="${revenueChange >= 0 ? 'comparison-good' : 'comparison-bad'}" style="font-weight: 600;">
+                                    ${revenueChange >= 0 ? '+' : ''}${formatPercent(revenueChange)}
+                                </span>
+                                <span>Revenue</span>
+                            </div>
+                            <div class="benchmark-value">
+                                <span class="${donorChange >= 0 ? 'comparison-good' : 'comparison-bad'}" style="font-weight: 600;">
+                                    ${donorChange >= 0 ? '+' : ''}${formatPercent(donorChange)}
+                                </span>
+                                <span>Donors</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            yoyHtml += '</div>';
+            document.getElementById('yoy-metrics').innerHTML = yoyHtml;
+
+            // Cohort table
+            const tableBody = document.querySelector('#cohort-table tbody');
+            tableBody.innerHTML = cohorts.map(cohort => {
+                const data = cohortData[cohort];
+                const rates = data.retention_rates;
+                const years = Object.keys(rates).sort();
+
+                let cells = `<td><strong>${cohort}</strong></td><td>${data.acquired}</td>`;
+                for (let i = 0; i < 5; i++) {
+                    if (years[i]) {
+                        const rate = rates[years[i]].retention_rate;
+                        const colorClass = rate > 30 ? 'comparison-good' : rate > 15 ? 'comparison-neutral' : 'comparison-bad';
+                        cells += `<td class="${colorClass}">${formatPercent(rate)}</td>`;
+                    } else {
+                        cells += '<td>-</td>';
+                    }
+                }
+                return `<tr>${cells}</tr>`;
+            }).join('');
+        }
+
+        // External Context
+        function renderExternalContext() {
+            const benchmarks = layer3Data.static_benchmarks;
+            const timeline = layer3Data.economic_timeline;
+            const guide = layer3Data.feast_comparison_context.interpretation_guide;
+            const givingUsa = benchmarks.giving_usa_trends.annual_data;
+
+            // Calculate F.E.A.S.T. metrics
+            const feastRetention = layer2Data.retention_analysis.overall_metrics.overall_retention_rate;
+            const feastAvgGift = layer2Data.executive_summary.key_metrics.avg_gift_size;
+            const totalDonors = layer2Data.executive_summary.key_metrics.total_donors;
+            const recurringCount = layer2Data.recurring_donor_analysis.recurring_donors.length;
+            const recurringShare = (recurringCount / totalDonors * 100);
+
+            // Benchmark comparison
+            const healthBench = benchmarks.health_sector_benchmarks;
+            const allBench = benchmarks.retention_rates.all_nonprofits;
+
+            const comparisons = [
+                {
+                    metric: 'Overall Retention Rate',
+                    feast: feastRetention,
+                    health: healthBench.retention_rate,
+                    all: allBench.overall_retention,
+                    unit: '%'
+                },
+                {
+                    metric: 'Average Gift Size',
+                    feast: feastAvgGift,
+                    health: healthBench.average_gift,
+                    all: null,
+                    unit: '$'
+                },
+                {
+                    metric: 'Recurring Donor Share',
+                    feast: recurringShare,
+                    health: healthBench.recurring_donor_share,
+                    all: null,
+                    unit: '%'
+                }
+            ];
+
+            document.getElementById('benchmark-comparison').innerHTML = comparisons.map(c => {
+                const feastVsHealth = c.health ? (c.feast - c.health) : null;
+                const feastVsAll = c.all ? (c.feast - c.all) : null;
+
+                return `
+                    <div class="benchmark-row">
+                        <div class="benchmark-label">${c.metric}</div>
+                        <div class="benchmark-values">
+                            <div class="benchmark-value">
+                                <strong>${c.unit === '$' ? formatCurrency(c.feast) : formatPercent(c.feast)}</strong>
+                                <span>F.E.A.S.T.</span>
+                            </div>
+                            ${c.health ? `
+                                <div class="benchmark-value">
+                                    <span>${c.unit === '$' ? formatCurrency(c.health) : formatPercent(c.health)}</span>
+                                    <span>Health Sector</span>
+                                </div>
+                                <div class="benchmark-value">
+                                    <span class="${feastVsHealth >= 0 ? 'comparison-good' : 'comparison-bad'}">
+                                        ${feastVsHealth >= 0 ? '+' : ''}${c.unit === '$' ? formatCurrency(feastVsHealth) : formatPercent(feastVsHealth)}
+                                    </span>
+                                    <span>vs Benchmark</span>
+                                </div>
+                            ` : ''}
+                            ${c.all ? `
+                                <div class="benchmark-value">
+                                    <span>${formatPercent(c.all)}</span>
+                                    <span>All Nonprofits</span>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Giving USA chart
+            const guaYears = Object.keys(givingUsa).sort();
+            const feastYears = Object.keys(layer2Data.giving_patterns.yearly_trends).sort();
+
+            charts.givingUsa = new Chart(document.getElementById('givingUsaChart'), {
+                type: 'line',
+                data: {
+                    labels: guaYears,
+                    datasets: [{
+                        label: 'Health Sector (Billions)',
+                        data: guaYears.map(y => givingUsa[y].health_sector_billions),
+                        borderColor: 'rgba(66, 153, 225, 1)',
+                        backgroundColor: 'transparent',
+                        yAxisID: 'y'
+                    }, {
+                        label: 'F.E.A.S.T. Revenue (Thousands)',
+                        data: guaYears.map(y => {
+                            const feastData = layer2Data.giving_patterns.yearly_trends[y];
+                            return feastData ? feastData.total_amount / 1000 : null;
+                        }),
+                        borderColor: 'rgba(56, 161, 105, 1)',
+                        backgroundColor: 'transparent',
+                        yAxisID: 'y1'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            position: 'left',
+                            title: { display: true, text: 'Health Sector ($B)' }
+                        },
+                        y1: {
+                            type: 'linear',
+                            position: 'right',
+                            title: { display: true, text: 'F.E.A.S.T. ($K)' },
+                            grid: { drawOnChartArea: false }
+                        }
+                    }
+                }
+            });
+
+            // Consumer confidence chart
+            const cciData = timeline.consumer_confidence_index.quarterly_data;
+            const quarters = Object.keys(cciData).sort();
+
+            charts.consumerConfidence = new Chart(document.getElementById('consumerConfidenceChart'), {
+                type: 'line',
+                data: {
+                    labels: quarters,
+                    datasets: [{
+                        label: 'Consumer Confidence Index',
+                        data: quarters.map(q => cciData[q]),
+                        borderColor: 'rgba(128, 90, 213, 1)',
+                        backgroundColor: 'rgba(128, 90, 213, 0.1)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: false }
+                    }
+                }
+            });
+
+            // Events timeline
+            const events = timeline.major_events;
+            document.getElementById('events-timeline').innerHTML = `
+                <div style="max-height: 400px; overflow-y: auto;">
+                    ${events.map(e => {
+                        const impactColor = e.donor_impact.includes('negative') ? 'danger' :
+                                           e.donor_impact.includes('positive') ? 'success' : 'warning';
+                        return `
+                            <div style="display: flex; gap: 1rem; padding: 1rem 0; border-bottom: 1px solid var(--border);">
+                                <div style="flex-shrink: 0; width: 80px; font-weight: 600; color: var(--primary);">${e.date}</div>
+                                <div style="flex: 1;">
+                                    <div style="font-weight: 600;">${e.event}</div>
+                                    <div style="font-size: 0.875rem; color: var(--text-muted);">${e.description}</div>
+                                    <div style="font-size: 0.8rem; margin-top: 0.25rem;">
+                                        <span class="badge badge-${impactColor}">${e.donor_impact} impact</span>
+                                        <span style="margin-left: 0.5rem; color: var(--text-muted);">${e.impact_notes}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+
+            // Interpretation guide
+            document.getElementById('interpretation-guide').innerHTML = Object.entries(guide).map(([metric, levels]) => `
+                <div style="padding: 1rem; background: var(--bg-light); border-radius: 8px;">
+                    <h4 style="margin-bottom: 0.75rem; text-transform: capitalize;">${metric.replace(/_/g, ' ')}</h4>
+                    ${typeof levels === 'object' && levels.excellent ? `
+                        <div style="font-size: 0.8rem;">
+                            <div style="color: var(--secondary);"><strong>Excellent:</strong> ${levels.excellent}</div>
+                            <div style="color: var(--primary);"><strong>Good:</strong> ${levels.good}</div>
+                            <div><strong>Average:</strong> ${levels.average}</div>
+                            <div style="color: var(--warning);"><strong>Below Avg:</strong> ${levels.below_average}</div>
+                            <div style="color: var(--danger);"><strong>Needs Attention:</strong> ${levels.needs_attention}</div>
+                        </div>
+                    ` : `
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">
+                            ${levels.context || ''}<br>
+                            ${levels.notes || ''}
+                        </div>
+                    `}
+                </div>
+            `).join('');
+        }
+
+        // Initialize
+        loadData();
+    </script>
+</body>
+</html>
