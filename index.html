@@ -445,6 +445,81 @@
             border-radius: 3px;
         }
 
+        /* Landing Section Styles */
+        .landing-section {
+            text-align: center;
+            padding: 2rem 0;
+        }
+
+        .landing-header {
+            margin-bottom: 2.5rem;
+        }
+
+        .landing-header h2 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 0.75rem;
+        }
+
+        .landing-header p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .landing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.25rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .landing-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: left;
+            cursor: pointer;
+            border: 2px solid transparent;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            transition: all 0.25s ease;
+        }
+
+        .landing-card:hover {
+            border-color: var(--primary-light);
+            box-shadow: 0 8px 25px rgba(44, 82, 130, 0.12);
+            transform: translateY(-3px);
+        }
+
+        .landing-card-icon {
+            font-size: 2rem;
+            margin-bottom: 0.75rem;
+            display: block;
+        }
+
+        .landing-card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .landing-card-question {
+            font-size: 0.95rem;
+            color: var(--primary);
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .landing-card-description {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
         @media (max-width: 768px) {
             main { padding: 1rem; }
             .grid-2, .grid-3 { grid-template-columns: 1fr; }
@@ -461,7 +536,8 @@
 
     <nav>
         <ul>
-            <li><a href="#executive" class="active" data-section="executive">Executive Summary</a></li>
+            <li><a href="#landing" class="active" data-section="landing">Home</a></li>
+            <li><a href="#executive" data-section="executive">Executive Summary</a></li>
             <li><a href="#concentration" data-section="concentration">Concentration Risk</a></li>
             <li><a href="#health" data-section="health">Donor Health</a></li>
             <li><a href="#patterns" data-section="patterns">Giving Patterns</a></li>
@@ -473,8 +549,62 @@
     <main>
         <div id="loading" class="loading">Loading donor data...</div>
 
+        <!-- Landing Section -->
+        <section id="landing" class="active">
+            <div class="landing-section">
+                <div class="landing-header">
+                    <h2>Welcome to Your Donor Analytics</h2>
+                    <p>Choose a section below to explore your fundraising data and uncover actionable insights.</p>
+                </div>
+
+                <div class="landing-grid">
+                    <div class="landing-card" data-navigate="executive">
+                        <span class="landing-card-icon">📈</span>
+                        <div class="landing-card-title">Executive Summary</div>
+                        <div class="landing-card-question">What's the big picture?</div>
+                        <div class="landing-card-description">Get a quick snapshot of total revenue, donor counts, and key health indicators at a glance.</div>
+                    </div>
+
+                    <div class="landing-card" data-navigate="concentration">
+                        <span class="landing-card-icon">🎯</span>
+                        <div class="landing-card-title">Concentration Risk</div>
+                        <div class="landing-card-question">How fragile is your funding base?</div>
+                        <div class="landing-card-description">See how much revenue depends on your biggest donors—and what happens if you lose one.</div>
+                    </div>
+
+                    <div class="landing-card" data-navigate="health">
+                        <span class="landing-card-icon">❤️</span>
+                        <div class="landing-card-title">Donor Health</div>
+                        <div class="landing-card-question">Who's thriving, who's drifting?</div>
+                        <div class="landing-card-description">Identify your most loyal supporters and the ones at risk of disappearing.</div>
+                    </div>
+
+                    <div class="landing-card" data-navigate="patterns">
+                        <span class="landing-card-icon">📊</span>
+                        <div class="landing-card-title">Giving Patterns</div>
+                        <div class="landing-card-question">How do people give?</div>
+                        <div class="landing-card-description">Discover when donations peak, which channels work, and who's becoming a regular.</div>
+                    </div>
+
+                    <div class="landing-card" data-navigate="temporal">
+                        <span class="landing-card-icon">📅</span>
+                        <div class="landing-card-title">Temporal Trends</div>
+                        <div class="landing-card-question">What's changing over time?</div>
+                        <div class="landing-card-description">Track retention by year, spot cohorts that stuck around, and see upgrade/downgrade flows.</div>
+                    </div>
+
+                    <div class="landing-card" data-navigate="context">
+                        <span class="landing-card-icon">🌍</span>
+                        <div class="landing-card-title">External Context</div>
+                        <div class="landing-card-question">Is it you, or is it the economy?</div>
+                        <div class="landing-card-description">Compare your performance against sector benchmarks and economic conditions.</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- Executive Summary Section -->
-        <section id="executive" class="active">
+        <section id="executive">
             <h2 class="section-title">Executive Summary</h2>
 
             <div id="alerts-container"></div>
@@ -776,16 +906,29 @@
         }
 
         // Navigation handling
+        function navigateToSection(sectionId) {
+            // Update nav links
+            document.querySelectorAll('nav a').forEach(l => l.classList.remove('active'));
+            const navLink = document.querySelector(`nav a[data-section="${sectionId}"]`);
+            if (navLink) navLink.classList.add('active');
+
+            // Update sections
+            document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+        }
+
         document.querySelectorAll('nav a').forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
-                const section = link.dataset.section;
+                navigateToSection(link.dataset.section);
+            });
+        });
 
-                document.querySelectorAll('nav a').forEach(l => l.classList.remove('active'));
-                link.classList.add('active');
-
-                document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
-                document.getElementById(section).classList.add('active');
+        // Landing card navigation
+        document.querySelectorAll('.landing-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const target = card.dataset.navigate;
+                if (target) navigateToSection(target);
             });
         });
 
