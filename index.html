@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>F.E.A.S.T. Donor Analytics Dashboard</title>
+    <title>Sample Nonprofit Donor Analytics Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
@@ -455,7 +455,7 @@
 </head>
 <body>
     <header>
-        <h1>F.E.A.S.T. Donor Analytics Dashboard</h1>
+        <h1>Sample Nonprofit Donor Analytics Dashboard</h1>
         <p>Data-driven insights for nonprofit fundraising success</p>
     </header>
 
@@ -700,14 +700,14 @@
             <div class="card">
                 <div class="card-title">Performance vs. Industry Benchmarks</div>
                 <p style="color: var(--text-muted); margin-bottom: 1rem; font-size: 0.9rem;">
-                    Comparing F.E.A.S.T. metrics against health sector and all-nonprofit benchmarks.
+                    Comparing Sample Health Nonprofit metrics against health sector and all-nonprofit benchmarks.
                 </p>
                 <div id="benchmark-comparison"></div>
             </div>
 
             <div class="grid-2">
                 <div class="card">
-                    <div class="card-title">Giving USA Trends vs. F.E.A.S.T.</div>
+                    <div class="card-title">Giving USA Trends vs. Sample Health Nonprofit</div>
                     <div class="chart-container">
                         <canvas id="givingUsaChart"></canvas>
                     </div>
@@ -1490,7 +1490,7 @@
             const guide = layer3Data.feast_comparison_context.interpretation_guide;
             const givingUsa = benchmarks.giving_usa_trends.annual_data;
 
-            // Calculate F.E.A.S.T. metrics
+            // Calculate Sample Health Nonprofit metrics
             const feastRetention = layer2Data.retention_analysis.overall_metrics.overall_retention_rate;
             const feastAvgGift = layer2Data.executive_summary.key_metrics.avg_gift_size;
             const totalDonors = layer2Data.executive_summary.key_metrics.total_donors;
@@ -1535,7 +1535,7 @@
                         <div class="benchmark-values">
                             <div class="benchmark-value">
                                 <strong>${c.unit === '$' ? formatCurrency(c.feast) : formatPercent(c.feast)}</strong>
-                                <span>F.E.A.S.T.</span>
+                                <span>Sample Health Nonprofit</span>
                             </div>
                             ${c.health ? `
                                 <div class="benchmark-value">
@@ -1575,7 +1575,7 @@
                         backgroundColor: 'transparent',
                         yAxisID: 'y'
                     }, {
-                        label: 'F.E.A.S.T. Revenue (Thousands)',
+                        label: 'Sample Nonprofit Revenue (Thousands)',
                         data: guaYears.map(y => {
                             const feastData = layer2Data.giving_patterns.yearly_trends[y];
                             return feastData ? feastData.total_amount / 1000 : null;
@@ -1598,7 +1598,7 @@
                         y1: {
                             type: 'linear',
                             position: 'right',
-                            title: { display: true, text: 'F.E.A.S.T. ($K)' },
+                            title: { display: true, text: 'Sample Nonprofit ($K)' },
                             grid: { drawOnChartArea: false }
                         }
                     }
