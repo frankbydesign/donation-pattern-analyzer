@@ -477,7 +477,7 @@
 
         .modal {
             background: var(--bg-card);
-            border-radius: 8px;
+            border-radius: 6px;
             max-width: 800px;
             width: 100%;
             max-height: 85vh;
@@ -535,20 +535,26 @@
             width: 36px;
             height: 36px;
             border-radius: 50%;
-            border: 2px solid rgba(255,255,255,0.7);
-            background: transparent;
-            color: white;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text-muted);
             font-size: 1.25rem;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.15s ease;
             flex-shrink: 0;
             margin-left: 1rem;
         }
 
         .about-btn:hover {
-            background: rgba(255,255,255,0.2);
-            border-color: white;
+            background: var(--bg-light);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .about-btn:focus {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
         }
 
         /* About modal styles */
@@ -580,7 +586,7 @@
 
         .roadmap-item {
             background: var(--bg-light);
-            border-radius: 8px;
+            border-radius: 6px;
             padding: 1rem;
             margin-bottom: 0.75rem;
             border-left: 3px solid var(--primary-light);
@@ -1338,46 +1344,51 @@
                 <h3 class="modal-title" id="about-modal-title">About This Tool</h3>
                 <button class="modal-close" onclick="closeAboutModal()" aria-label="Close modal">&times;</button>
             </div>
-            <div class="modal-content">
-                <h3>Purpose</h3>
+            <div class="modal-content about-modal-content">
+                <h3>About This Tool</h3>
                 <p>
-                    This Donor Analytics Dashboard is a research and demonstration tool designed to help nonprofit organizations
-                    understand donor behavior patterns and make data-driven fundraising decisions.
+                    This tool explores how computational media can surface patterns that spreadsheets hide.
+                    Nonprofit leaders often have years of donor data but lack the cognitive bandwidth to
+                    hold thousands of transactions in working memory. The goal isn't just visualization—it's
+                    augmented decision-making.
+                </p>
+                <p>
+                    Built as a portfolio piece for my application to UC Santa Cruz's Computational Media
+                    PhD program, where my research focuses on how AI systems scaffold human judgment
+                    during complex decisions.
                 </p>
 
-                <h3>How to Use This Tool</h3>
-                <p>
-                    Navigate through the sections using the tabs above to explore different aspects of your donor data:
-                </p>
-                <ul>
-                    <li><strong>Executive Summary</strong> - High-level overview of key metrics and trends</li>
-                    <li><strong>Concentration Risk</strong> - Analyze revenue dependency on top donors</li>
-                    <li><strong>Donor Health</strong> - Segment donors by engagement level and identify at-risk supporters</li>
-                    <li><strong>Giving Patterns</strong> - Discover timing and channel preferences</li>
-                    <li><strong>Temporal Trends</strong> - Track cohort retention over time</li>
-                    <li><strong>External Context</strong> - Compare performance against sector benchmarks</li>
-                    <li><strong>Data Quality</strong> - Identify potential data issues requiring attention</li>
-                </ul>
+                <div class="roadmap-section">
+                    <h4>Future Directions</h4>
 
-                <h3>Research Context</h3>
-                <p>
-                    <!-- PLACEHOLDER: Add your research context here -->
-                    This tool was developed as part of ongoing research into nonprofit fundraising analytics
-                    and donor relationship management. The methodology combines RFM (Recency, Frequency, Monetary)
-                    analysis with sector-specific benchmarking data.
-                </p>
+                    <div class="roadmap-item">
+                        <h5>Volunteer-Driven Data Stewardship</h5>
+                        <p>
+                            Breaking analysis into small, learnable tasks so non-experts can contribute
+                            to data cleaning and categorization—turning operations into engagement.
+                        </p>
+                    </div>
 
-                <h3>Data Privacy</h3>
-                <p>
-                    All data processing occurs locally in your browser. No donor information is transmitted
-                    to external servers. The sample data shown is synthetic and does not represent real individuals.
-                </p>
+                    <div class="roadmap-item">
+                        <h5>Institutional Memory Layer</h5>
+                        <p>
+                            Letting staff annotate the timeline with context ("Gala 2023," "Leadership
+                            transition") so data is understood in its proper organizational history.
+                        </p>
+                    </div>
 
-                <h3>Feedback</h3>
-                <p>
-                    <!-- PLACEHOLDER: Add feedback instructions here -->
-                    For questions, suggestions, or to report issues, please contact the research team.
-                </p>
+                    <div class="roadmap-item">
+                        <h5>Scenario Planning</h5>
+                        <p>
+                            Simulating shocks like "What if we lose our top 3 donors?" to help leaders
+                            stress-test financial resilience before crises hit.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="tech-stack-note">
+                    <small><strong>Built with:</strong> Vanilla JavaScript, Chart.js, and WCAG-compliant design principles.</small>
+                </div>
             </div>
         </div>
     </div>
@@ -1472,56 +1483,6 @@
         function closeModal() {
             document.getElementById('modal-overlay').classList.remove('active');
             document.body.style.overflow = '';
-        }
-
-        function openAboutModal() {
-            const aboutContent = `
-                <div class="about-modal-content">
-                    <h3>About This Tool</h3>
-                    <p>
-                        This tool explores how computational media can surface patterns that spreadsheets hide.
-                        Nonprofit leaders often have years of donor data but lack the cognitive bandwidth to
-                        hold thousands of transactions in working memory. The goal isn't just visualization—it's
-                        augmented decision-making.
-                    </p>
-                    <p>
-                        Built as a portfolio piece for my application to UC Santa Cruz's Computational Media
-                        PhD program, where my research focuses on how AI systems scaffold human judgment
-                        during complex decisions.
-                    </p>
-
-                    <div class="roadmap-section">
-                        <h4>Future Directions</h4>
-
-                        <div class="roadmap-item">
-                            <h5>Volunteer-Driven Data Stewardship</h5>
-                            <p>
-                                Breaking analysis into small, learnable tasks so non-experts can contribute
-                                to data cleaning and categorization—turning operations into engagement.
-                            </p>
-                        </div>
-                        <div class="roadmap-item">
-                            <h5>Institutional Memory Layer</h5>
-                            <p>
-                                Letting staff annotate the timeline with context ("Gala 2023," "Leadership
-                                transition") so data is understood in its proper organizational history.
-                            </p>
-                        </div>
-                        <div class="roadmap-item">
-                            <h5>Scenario Planning</h5>
-                            <p>
-                                Simulating shocks like "What if we lose our top 3 donors?" to help leaders
-                                stress-test financial resilience before crises hit.
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="tech-stack-note">
-                        <small><strong>Built with:</strong> Vanilla JavaScript, Chart.js, and WCAG-compliant design principles.</small>
-                    </div>
-                </div>
-            `;
-            openModal('About', aboutContent);
         }
 
         document.getElementById('modal-overlay').addEventListener('click', (e) => {
