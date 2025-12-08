@@ -630,7 +630,7 @@
         <div id="loading" class="loading">Loading donor data...</div>
 
         <!-- Landing Section -->
-        <section id="landing" class="active">
+        <section id="landing">
             <div class="landing-section">
                 <div class="landing-header">
                     <h2>Welcome to Your Donor Analytics</h2>
@@ -1137,6 +1137,7 @@
                 layer3Data = l3;
 
                 document.getElementById('loading').style.display = 'none';
+                document.getElementById('landing').classList.add('active');
                 renderDashboard();
             } catch (error) {
                 document.getElementById('loading').innerHTML =
