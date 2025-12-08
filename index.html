@@ -1326,7 +1326,6 @@ python -m http.server 8080
 
             // Yearly revenue chart
             const yearlyData = layer2Data.giving_patterns.yearly_trends;
-            const years = Object.keys(yearlyData).sort();
 
             charts.yearlyRevenue = new Chart(document.getElementById('yearlyRevenueChart'), {
                 type: 'bar',
