@@ -1223,13 +1223,13 @@ python -m http.server 8080
             const healthBench = benchmarks.health_sector_benchmarks;
             const allNonprofit = benchmarks.retention_rates.all_nonprofits;
             const yearlyTrends = layer2Data.giving_patterns.yearly_trends;
-            const years = Object.keys(yearlyTrends).sort();
+            const summaryYears = Object.keys(yearlyTrends).sort();
 
             // Calculate trends (compare recent years)
             const getRevenueTrend = () => {
-                if (years.length < 3) return { direction: 'stable', color: 'var(--text-muted)' };
-                const recent = yearlyTrends[years[years.length - 1]].total_amount;
-                const twoYearsAgo = yearlyTrends[years[years.length - 3]].total_amount;
+                if (summaryYears.length < 3) return { direction: 'stable', color: 'var(--text-muted)' };
+                const recent = yearlyTrends[summaryYears[summaryYears.length - 1]].total_amount;
+                const twoYearsAgo = yearlyTrends[summaryYears[summaryYears.length - 3]].total_amount;
                 const change = ((recent - twoYearsAgo) / twoYearsAgo) * 100;
                 if (change > 5) return { direction: 'Improving', color: 'var(--success)' };
                 if (change < -5) return { direction: 'Declining', color: 'var(--danger)' };
@@ -1237,9 +1237,9 @@ python -m http.server 8080
             };
 
             const getDonorTrend = () => {
-                if (years.length < 3) return { direction: 'stable', color: 'var(--text-muted)', prevRate: null };
-                const recent = yearlyTrends[years[years.length - 1]].unique_donors;
-                const twoYearsAgo = yearlyTrends[years[years.length - 3]].unique_donors;
+                if (summaryYears.length < 3) return { direction: 'stable', color: 'var(--text-muted)', prevRate: null };
+                const recent = yearlyTrends[summaryYears[summaryYears.length - 1]].unique_donors;
+                const twoYearsAgo = yearlyTrends[summaryYears[summaryYears.length - 3]].unique_donors;
                 const change = ((recent - twoYearsAgo) / twoYearsAgo) * 100;
                 // Calculate approx active rate two years ago
                 const prevActiveRate = (twoYearsAgo / metrics.total_donors * 100).toFixed(0);
@@ -1330,10 +1330,10 @@ python -m http.server 8080
             charts.yearlyRevenue = new Chart(document.getElementById('yearlyRevenueChart'), {
                 type: 'bar',
                 data: {
-                    labels: years,
+                    labels: summaryYears,
                     datasets: [{
                         label: 'Total Revenue',
-                        data: years.map(y => yearlyData[y].total_amount),
+                        data: summaryYears.map(y => yearlyData[y].total_amount),
                         backgroundColor: 'rgba(66, 153, 225, 0.8)',
                         borderColor: 'rgba(66, 153, 225, 1)',
                         borderWidth: 1
@@ -1365,17 +1365,17 @@ python -m http.server 8080
             charts.donorGrowth = new Chart(document.getElementById('donorGrowthChart'), {
                 type: 'line',
                 data: {
-                    labels: years,
+                    labels: summaryYears,
                     datasets: [{
                         label: 'Unique Donors',
-                        data: years.map(y => yearlyData[y].unique_donors),
+                        data: summaryYears.map(y => yearlyData[y].unique_donors),
                         borderColor: 'rgba(56, 161, 105, 1)',
                         backgroundColor: 'rgba(56, 161, 105, 0.1)',
                         fill: true,
                         tension: 0.3
                     }, {
                         label: 'Total Gifts',
-                        data: years.map(y => yearlyData[y].gift_count),
+                        data: summaryYears.map(y => yearlyData[y].gift_count),
                         borderColor: 'rgba(66, 153, 225, 1)',
                         backgroundColor: 'rgba(66, 153, 225, 0.1)',
                         fill: true,
@@ -1781,8 +1781,8 @@ python -m http.server 8080
             const cohorts = Object.keys(cohortData).filter(y => y !== '2025').sort();
             const datasets = cohorts.map((cohort, i) => {
                 const rates = cohortData[cohort].retention_rates;
-                const years = Object.keys(rates).sort();
-                const data = years.map(y => rates[y].retention_rate);
+                const cohortChartYears = Object.keys(rates).sort();
+                const data = cohortChartYears.map(y => rates[y].retention_rate);
 
                 const colors = [
                     'rgba(66, 153, 225, 1)',
@@ -1887,12 +1887,12 @@ python -m http.server 8080
             tableBody.innerHTML = cohorts.map(cohort => {
                 const data = cohortData[cohort];
                 const rates = data.retention_rates;
-                const years = Object.keys(rates).sort();
+                const cohortTableYears = Object.keys(rates).sort();
 
                 let cells = `<td><strong>${cohort}</strong></td><td>${data.acquired}</td>`;
                 for (let i = 0; i < 5; i++) {
-                    if (years[i]) {
-                        const rate = rates[years[i]].retention_rate;
+                    if (cohortTableYears[i]) {
+                        const rate = rates[cohortTableYears[i]].retention_rate;
                         const colorClass = rate > 30 ? 'comparison-good' : rate > 15 ? 'comparison-neutral' : 'comparison-bad';
                         cells += `<td class="${colorClass}">${formatPercent(rate)}</td>`;
                     } else {
@@ -2243,13 +2243,13 @@ python -m http.server 8080
                     const lastGiftDate = new Date(donor.last_gift);
                     const daysSinceLastGift = daysBetween(donor.last_gift, today.toISOString().split('T')[0]);
                     if (daysSinceLastGift > 730) { // 2 years
-                        const years = (daysSinceLastGift / 365).toFixed(1);
+                        const yearsInactive = (daysSinceLastGift / 365).toFixed(1);
                         flags.push({
                             severity: 'yellow',
                             severityOrder: 3,
                             donorId: donor.donor_id,
                             issueType: 'Stale Single-Gift',
-                            details: `Only 1 gift, ${years} years ago - may need data cleanup`,
+                            details: `Only 1 gift, ${yearsInactive} years ago - may need data cleanup`,
                             amount: gifts[0].amount,
                             date: gifts[0].date
                         });
