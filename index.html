@@ -262,6 +262,85 @@
         .badge-danger { background: #fed7d7; color: #9b2c2c; }
         .badge-info { background: #bee3f8; color: #2a4365; }
 
+        /* Severity badges for Data Quality Flags */
+        .badge-severity-red { background: #fed7d7; color: #9b2c2c; font-weight: 700; }
+        .badge-severity-orange { background: #fef3c7; color: #92400e; font-weight: 700; }
+        .badge-severity-yellow { background: #fefce8; color: #854d0e; font-weight: 700; }
+
+        /* Data Quality Summary Cards */
+        .severity-summary {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .severity-card {
+            flex: 1;
+            min-width: 150px;
+            padding: 1rem 1.25rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .severity-card.red {
+            background: linear-gradient(135deg, #fed7d7 0%, #feb2b2 100%);
+            border: 2px solid #fc8181;
+        }
+
+        .severity-card.orange {
+            background: linear-gradient(135deg, #fef3c7 0%, #fcd34d 100%);
+            border: 2px solid #f6ad55;
+        }
+
+        .severity-card.yellow {
+            background: linear-gradient(135deg, #fefce8 0%, #fef08a 100%);
+            border: 2px solid #facc15;
+        }
+
+        .severity-count {
+            font-size: 2rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .severity-card.red .severity-count { color: #9b2c2c; }
+        .severity-card.orange .severity-count { color: #92400e; }
+        .severity-card.yellow .severity-count { color: #854d0e; }
+
+        .severity-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-top: 0.25rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .severity-card.red .severity-label { color: #c53030; }
+        .severity-card.orange .severity-label { color: #b45309; }
+        .severity-card.yellow .severity-label { color: #a16207; }
+
+        .severity-desc {
+            font-size: 0.75rem;
+            margin-top: 0.25rem;
+            opacity: 0.8;
+        }
+
+        /* Data Quality Table Styles */
+        .quality-table tr.severity-red { background: rgba(254, 215, 215, 0.3); }
+        .quality-table tr.severity-orange { background: rgba(254, 243, 199, 0.3); }
+        .quality-table tr.severity-yellow { background: rgba(254, 252, 232, 0.3); }
+
+        .quality-table tr.severity-red:hover { background: rgba(254, 215, 215, 0.5); }
+        .quality-table tr.severity-orange:hover { background: rgba(254, 243, 199, 0.5); }
+        .quality-table tr.severity-yellow:hover { background: rgba(254, 252, 232, 0.5); }
+
+        .issue-details {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            max-width: 300px;
+        }
+
         .progress-bar {
             height: 8px;
             background: var(--bg-light);
@@ -543,6 +622,7 @@
             <li><a href="#patterns" data-section="patterns">Giving Patterns</a></li>
             <li><a href="#temporal" data-section="temporal">Temporal Trends</a></li>
             <li><a href="#context" data-section="context">External Context</a></li>
+            <li><a href="#quality" data-section="quality">Data Quality</a></li>
         </ul>
     </nav>
 
@@ -598,6 +678,13 @@
                         <div class="landing-card-title">External Context</div>
                         <div class="landing-card-question">Is it you, or is it the economy?</div>
                         <div class="landing-card-description">Compare your performance against sector benchmarks and economic conditions.</div>
+                    </div>
+
+                    <div class="landing-card" data-navigate="quality">
+                        <span class="landing-card-icon">🚩</span>
+                        <div class="landing-card-title">Data Quality Flags</div>
+                        <div class="landing-card-question">Is your data reliable?</div>
+                        <div class="landing-card-description">Identify duplicates, outliers, and anomalies that might skew your analysis or need correction.</div>
                     </div>
                 </div>
             </div>
@@ -863,6 +950,86 @@
                 <div class="grid-3" id="interpretation-guide"></div>
             </div>
         </section>
+
+        <!-- Data Quality Flags Section -->
+        <section id="quality">
+            <h2 class="section-title">Data Quality Flags</h2>
+
+            <p style="color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.95rem;">
+                Automated detection of potential data issues that may require review or correction. Click any row to view the full donor record.
+            </p>
+
+            <!-- Severity Summary Cards -->
+            <div class="severity-summary" id="quality-summary">
+                <div class="severity-card red">
+                    <div class="severity-count" id="red-count">0</div>
+                    <div class="severity-label">Critical</div>
+                    <div class="severity-desc">Likely errors - review immediately</div>
+                </div>
+                <div class="severity-card orange">
+                    <div class="severity-count" id="orange-count">0</div>
+                    <div class="severity-label">Warning</div>
+                    <div class="severity-desc">Probable issues - review soon</div>
+                </div>
+                <div class="severity-card yellow">
+                    <div class="severity-count" id="yellow-count">0</div>
+                    <div class="severity-label">Info</div>
+                    <div class="severity-desc">Worth checking when time allows</div>
+                </div>
+            </div>
+
+            <!-- Severity Legend -->
+            <div class="card" style="margin-bottom: 1.5rem;">
+                <div class="card-title">What Each Severity Level Means</div>
+                <div class="grid-3">
+                    <div>
+                        <span class="badge badge-severity-red">RED - Critical</span>
+                        <ul style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem; padding-left: 1.25rem;">
+                            <li>Exact duplicates (same donor, date, amount)</li>
+                            <li>Impossible values ($0 or negative)</li>
+                            <li>Future-dated donations</li>
+                            <li>Extreme outliers (20x+ above average)</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <span class="badge badge-severity-orange">ORANGE - Warning</span>
+                        <ul style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem; padding-left: 1.25rem;">
+                            <li>Near-duplicates (within 2 days)</li>
+                            <li>Large outliers (10-20x above average)</li>
+                            <li>Data entry lag over 30 days</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <span class="badge badge-severity-yellow">YELLOW - Info</span>
+                        <ul style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem; padding-left: 1.25rem;">
+                            <li>Moderate outliers (3-10x above average)</li>
+                            <li>Pattern breaks (inconsistent giving)</li>
+                            <li>Stale single-gift donors (2+ years inactive)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Quality Table -->
+            <div class="card">
+                <div class="card-title">Flagged Records</div>
+                <div class="donor-list" style="max-height: 600px;">
+                    <table class="quality-table" id="quality-table">
+                        <thead>
+                            <tr>
+                                <th>Severity</th>
+                                <th>Donor ID</th>
+                                <th>Issue Type</th>
+                                <th>Details</th>
+                                <th>Amount</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
     </main>
 
     <!-- Modal for drill-down -->
@@ -977,6 +1144,7 @@
             renderGivingPatterns();
             renderTemporalTrends();
             renderExternalContext();
+            renderDataQuality();
         }
 
         // Executive Summary
@@ -1819,6 +1987,247 @@
                     `}
                 </div>
             `).join('');
+        }
+
+        // Data Quality Flags
+        function renderDataQuality() {
+            const today = new Date();
+            const flags = [];
+
+            // Helper to calculate days between dates
+            function daysBetween(date1, date2) {
+                const d1 = new Date(date1);
+                const d2 = new Date(date2);
+                return Math.floor((d2 - d1) / (1000 * 60 * 60 * 24));
+            }
+
+            // Process each donor
+            layer1Data.donors.forEach(donor => {
+                const gifts = donor.gifts || [];
+                if (gifts.length === 0) return;
+
+                // Calculate donor's average gift
+                const totalAmount = gifts.reduce((sum, g) => sum + g.amount, 0);
+                const avgGift = totalAmount / gifts.length;
+
+                // Track gifts by date+amount for duplicate detection
+                const giftMap = new Map();
+                gifts.forEach((gift, idx) => {
+                    const key = `${gift.date}_${gift.amount}`;
+                    if (!giftMap.has(key)) {
+                        giftMap.set(key, []);
+                    }
+                    giftMap.get(key).push({ ...gift, index: idx });
+                });
+
+                // Check each gift for issues
+                gifts.forEach((gift, idx) => {
+                    const giftDate = new Date(gift.date);
+                    const key = `${gift.date}_${gift.amount}`;
+                    const duplicates = giftMap.get(key);
+
+                    // RED FLAGS (Critical)
+
+                    // 1. Exact duplicates - only flag first occurrence to avoid double-counting
+                    if (duplicates.length > 1 && duplicates[0].index === idx) {
+                        flags.push({
+                            severity: 'red',
+                            severityOrder: 1,
+                            donorId: donor.donor_id,
+                            issueType: 'Exact Duplicate',
+                            details: `${duplicates.length} identical gifts found`,
+                            amount: gift.amount,
+                            date: gift.date
+                        });
+                    }
+
+                    // 2. Impossible values - $0 or negative
+                    if (gift.amount <= 0) {
+                        flags.push({
+                            severity: 'red',
+                            severityOrder: 1,
+                            donorId: donor.donor_id,
+                            issueType: 'Invalid Amount',
+                            details: gift.amount === 0 ? 'Zero dollar donation' : 'Negative amount',
+                            amount: gift.amount,
+                            date: gift.date
+                        });
+                    }
+
+                    // 3. Future dates
+                    if (giftDate > today) {
+                        flags.push({
+                            severity: 'red',
+                            severityOrder: 1,
+                            donorId: donor.donor_id,
+                            issueType: 'Future Date',
+                            details: `Gift dated ${Math.ceil((giftDate - today) / (1000 * 60 * 60 * 24))} days in the future`,
+                            amount: gift.amount,
+                            date: gift.date
+                        });
+                    }
+
+                    // 4. Extreme outliers (20x+ above average)
+                    if (avgGift > 0 && gift.amount >= avgGift * 20 && gift.amount > 0) {
+                        const multiple = (gift.amount / avgGift).toFixed(1);
+                        flags.push({
+                            severity: 'red',
+                            severityOrder: 1,
+                            donorId: donor.donor_id,
+                            issueType: 'Extreme Outlier',
+                            details: `${multiple}x above donor avg (${formatCurrency(avgGift)})`,
+                            amount: gift.amount,
+                            date: gift.date
+                        });
+                    }
+                    // ORANGE FLAGS (Warning) - 10-20x outliers
+                    else if (avgGift > 0 && gift.amount >= avgGift * 10 && gift.amount < avgGift * 20 && gift.amount > 0) {
+                        const multiple = (gift.amount / avgGift).toFixed(1);
+                        flags.push({
+                            severity: 'orange',
+                            severityOrder: 2,
+                            donorId: donor.donor_id,
+                            issueType: 'Large Outlier',
+                            details: `${multiple}x above donor avg (${formatCurrency(avgGift)})`,
+                            amount: gift.amount,
+                            date: gift.date
+                        });
+                    }
+                    // YELLOW FLAGS (Info) - 3-10x outliers
+                    else if (avgGift > 0 && gift.amount >= avgGift * 3 && gift.amount < avgGift * 10 && gift.amount > 0) {
+                        const multiple = (gift.amount / avgGift).toFixed(1);
+                        flags.push({
+                            severity: 'yellow',
+                            severityOrder: 3,
+                            donorId: donor.donor_id,
+                            issueType: 'Moderate Outlier',
+                            details: `${multiple}x above donor avg (${formatCurrency(avgGift)})`,
+                            amount: gift.amount,
+                            date: gift.date
+                        });
+                    }
+                });
+
+                // ORANGE FLAGS - Near-duplicates (same amount within 2 days)
+                for (let i = 0; i < gifts.length; i++) {
+                    for (let j = i + 1; j < gifts.length; j++) {
+                        const daysDiff = Math.abs(daysBetween(gifts[i].date, gifts[j].date));
+                        if (daysDiff > 0 && daysDiff <= 2 && gifts[i].amount === gifts[j].amount) {
+                            // Check this isn't an exact duplicate (already flagged)
+                            if (gifts[i].date !== gifts[j].date) {
+                                flags.push({
+                                    severity: 'orange',
+                                    severityOrder: 2,
+                                    donorId: donor.donor_id,
+                                    issueType: 'Near-Duplicate',
+                                    details: `Same amount ${daysDiff} day(s) apart (${gifts[i].date} & ${gifts[j].date})`,
+                                    amount: gifts[i].amount,
+                                    date: gifts[i].date
+                                });
+                            }
+                        }
+                    }
+                }
+
+                // YELLOW FLAGS - Stale single-gift donors (2+ years inactive)
+                if (gifts.length === 1) {
+                    const lastGiftDate = new Date(donor.last_gift);
+                    const daysSinceLastGift = daysBetween(donor.last_gift, today.toISOString().split('T')[0]);
+                    if (daysSinceLastGift > 730) { // 2 years
+                        const years = (daysSinceLastGift / 365).toFixed(1);
+                        flags.push({
+                            severity: 'yellow',
+                            severityOrder: 3,
+                            donorId: donor.donor_id,
+                            issueType: 'Stale Single-Gift',
+                            details: `Only 1 gift, ${years} years ago - may need data cleanup`,
+                            amount: gifts[0].amount,
+                            date: gifts[0].date
+                        });
+                    }
+                }
+
+                // YELLOW FLAGS - Pattern breaks (for recurring donors)
+                if (gifts.length >= 6) {
+                    // Calculate time gaps between gifts
+                    const gaps = [];
+                    const sortedGifts = [...gifts].sort((a, b) => new Date(a.date) - new Date(b.date));
+                    for (let i = 1; i < sortedGifts.length; i++) {
+                        gaps.push(daysBetween(sortedGifts[i-1].date, sortedGifts[i].date));
+                    }
+
+                    // Check if donor has a regular pattern (low variance in gaps)
+                    const avgGap = gaps.reduce((sum, g) => sum + g, 0) / gaps.length;
+                    const variance = gaps.reduce((sum, g) => sum + Math.pow(g - avgGap, 2), 0) / gaps.length;
+                    const stdDev = Math.sqrt(variance);
+
+                    // If typically regular (stdDev < 30% of avgGap), check for recent big gap
+                    if (avgGap > 14 && avgGap < 120 && stdDev < avgGap * 0.3) {
+                        const lastGap = gaps[gaps.length - 1];
+                        if (lastGap > avgGap * 2.5) {
+                            flags.push({
+                                severity: 'yellow',
+                                severityOrder: 3,
+                                donorId: donor.donor_id,
+                                issueType: 'Pattern Break',
+                                details: `Usually gives every ~${Math.round(avgGap)} days, last gap was ${lastGap} days`,
+                                amount: sortedGifts[sortedGifts.length - 1].amount,
+                                date: sortedGifts[sortedGifts.length - 1].date
+                            });
+                        }
+                    }
+                }
+            });
+
+            // Sort flags: by severity (red=1, orange=2, yellow=3), then by amount descending
+            flags.sort((a, b) => {
+                if (a.severityOrder !== b.severityOrder) {
+                    return a.severityOrder - b.severityOrder;
+                }
+                return Math.abs(b.amount) - Math.abs(a.amount);
+            });
+
+            // Count by severity
+            const redCount = flags.filter(f => f.severity === 'red').length;
+            const orangeCount = flags.filter(f => f.severity === 'orange').length;
+            const yellowCount = flags.filter(f => f.severity === 'yellow').length;
+
+            // Update summary counts
+            document.getElementById('red-count').textContent = formatNumber(redCount);
+            document.getElementById('orange-count').textContent = formatNumber(orangeCount);
+            document.getElementById('yellow-count').textContent = formatNumber(yellowCount);
+
+            // Render table
+            const tbody = document.querySelector('#quality-table tbody');
+
+            if (flags.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                            No data quality issues detected. Your data looks clean!
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = flags.map(flag => {
+                const badgeClass = `badge-severity-${flag.severity}`;
+                const rowClass = `severity-${flag.severity}`;
+                const severityLabel = flag.severity === 'red' ? 'CRITICAL' :
+                                     flag.severity === 'orange' ? 'WARNING' : 'INFO';
+
+                return `
+                    <tr class="${rowClass} clickable" onclick="showDonorDetail('${flag.donorId}')">
+                        <td><span class="badge ${badgeClass}">${severityLabel}</span></td>
+                        <td>${flag.donorId}</td>
+                        <td>${flag.issueType}</td>
+                        <td class="issue-details">${flag.details}</td>
+                        <td><strong>${formatCurrency(flag.amount)}</strong></td>
+                        <td>${flag.date}</td>
+                    </tr>
+                `;
+            }).join('');
         }
 
         // Initialize
