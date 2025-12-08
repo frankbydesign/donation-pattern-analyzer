@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sample Nonprofit Donor Analytics Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <style>
         :root {
             --primary: #2c5282;
@@ -700,7 +701,7 @@
 
             <div class="grid-2" style="margin-top: 1.5rem;">
                 <div class="card">
-                    <div class="card-title">Revenue by Year</div>
+                    <div class="card-title">Donor Revenue by Year</div>
                     <div class="chart-container">
                         <canvas id="yearlyRevenueChart"></canvas>
                     </div>
@@ -737,12 +738,12 @@
                 </div>
                 <div class="card">
                     <div class="card-title">Giving Level Distribution</div>
+                    <p class="chart-guidance">
+                        Health nonprofits typically see 60-70% of donors in the under-$100 tier. A higher share of mid-level ($100-$500) donors suggests strong cultivation.
+                    </p>
                     <div class="chart-container">
                         <canvas id="givingLevelChart"></canvas>
                     </div>
-                    <p style="color: var(--text-muted); margin-top: 1rem; font-size: 0.85rem; font-style: italic;">
-                        Health nonprofits typically see 60-70% of donors in the under-$100 tier. A higher share of mid-level ($100-$500) donors suggests strong cultivation.
-                    </p>
                 </div>
             </div>
 
@@ -842,13 +843,13 @@
 
             <div class="grid-2">
                 <div class="card">
-                    <div class="card-title">Monthly Giving Patterns</div>
+                    <div class="card-title">Monthly Giving Patterns <span style="font-weight: 400; font-size: 0.7rem; color: var(--text-muted);">(All-Time Data)</span></div>
                     <div class="chart-container">
                         <canvas id="monthlyChart"></canvas>
                     </div>
                 </div>
                 <div class="card">
-                    <div class="card-title">Day of Week Patterns</div>
+                    <div class="card-title">Day of Week Patterns <span style="font-weight: 400; font-size: 0.7rem; color: var(--text-muted);">(All-Time Data)</span></div>
                     <div class="chart-container">
                         <canvas id="weekdayChart"></canvas>
                     </div>
@@ -900,6 +901,9 @@
 
             <div class="card">
                 <div class="card-title">Retention Cohort Detail</div>
+                <p class="chart-guidance">
+                    Each row shows a cohort of donors acquired in that year and what percentage returned in subsequent years. Higher percentages indicate stronger loyalty. Compare across cohorts to see if retention is improving or declining over time.
+                </p>
                 <div style="overflow-x: auto;">
                     <table id="cohort-table">
                         <thead>
@@ -1474,6 +1478,7 @@ python -m http.server 8080
 
             // Giving levels chart
             const levels = Object.entries(givingLevels);
+            const levelsTotal = levels.reduce((sum, [, data]) => sum + data.total, 0);
             charts.givingLevel = new Chart(document.getElementById('givingLevelChart'), {
                 type: 'doughnut',
                 data: {
@@ -1502,9 +1507,18 @@ python -m http.server 8080
                                     return `${formatCurrency(ctx.raw)} (${level[1].count} donors)`;
                                 }
                             }
+                        },
+                        datalabels: {
+                            color: '#fff',
+                            font: { weight: 'bold', size: 11 },
+                            formatter: (value) => {
+                                const pct = (value / levelsTotal * 100);
+                                return pct >= 5 ? pct.toFixed(0) + '%' : '';
+                            }
                         }
                     }
-                }
+                },
+                plugins: [ChartDataLabels]
             });
 
             // Top donors table
@@ -1579,6 +1593,7 @@ python -m http.server 8080
                 { name: 'Hibernating', count: segments.hibernating?.count || 0, color: '#a0aec0' },
                 { name: 'Lost', count: segments.lost?.count || 0, color: '#e53e3e' }
             ].filter(s => s.count > 0);
+            const segmentTotal = segmentData.reduce((sum, s) => sum + s.count, 0);
 
             charts.segment = new Chart(document.getElementById('segmentChart'), {
                 type: 'doughnut',
@@ -1593,9 +1608,18 @@ python -m http.server 8080
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { display: false }
+                        legend: { display: false },
+                        datalabels: {
+                            color: '#fff',
+                            font: { weight: 'bold', size: 11 },
+                            formatter: (value) => {
+                                const pct = (value / segmentTotal * 100);
+                                return pct >= 5 ? pct.toFixed(0) + '%' : '';
+                            }
+                        }
                     }
-                }
+                },
+                plugins: [ChartDataLabels]
             });
 
             // Segment legend
@@ -1852,7 +1876,7 @@ python -m http.server 8080
 
             // YoY metrics (most recent first)
             const yoyYears = Object.keys(yearlyTrends).sort();
-            let yoyHtml = '<div style="max-height: 300px; overflow-y: auto;">';
+            let yoyHtml = '<div style="height: 100%; overflow-y: auto;">';
             for (let i = yoyYears.length - 1; i >= 1; i--) {
                 const prev = yearlyTrends[yoyYears[i - 1]];
                 const curr = yearlyTrends[yoyYears[i]];
@@ -1882,9 +1906,9 @@ python -m http.server 8080
             yoyHtml += '</div>';
             document.getElementById('yoy-metrics').innerHTML = yoyHtml;
 
-            // Cohort table
+            // Cohort table (most recent year at top)
             const tableBody = document.querySelector('#cohort-table tbody');
-            tableBody.innerHTML = cohorts.map(cohort => {
+            tableBody.innerHTML = cohorts.slice().reverse().map(cohort => {
                 const data = cohortData[cohort];
                 const rates = data.retention_rates;
                 const cohortTableYears = Object.keys(rates).sort();
