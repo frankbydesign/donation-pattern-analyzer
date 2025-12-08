@@ -1125,11 +1125,38 @@
 
         // Load all data
         async function loadData() {
+            // Check if running from file:// protocol (causes CORS errors)
+            if (window.location.protocol === 'file:') {
+                document.getElementById('loading').innerHTML = `
+                    <p style="color: var(--danger); font-weight: bold;">Cannot load data from file:// protocol</p>
+                    <p style="color: var(--text-muted); margin-top: 1rem;">
+                        Browsers block data loading when opening HTML files directly.<br>
+                        Please use a local web server instead:
+                    </p>
+                    <pre style="background: var(--bg-light); padding: 1rem; border-radius: 8px; margin-top: 1rem; text-align: left; display: inline-block;">
+# Python 3
+python -m http.server 8080
+
+# Then open: http://localhost:8080</pre>
+                `;
+                console.error('Dashboard cannot load via file:// protocol. Please use an HTTP server.');
+                return;
+            }
+
             try {
                 const [l1, l2, l3] = await Promise.all([
-                    fetch('donor_data_layer1.json').then(r => r.json()),
-                    fetch('donor_data_layer2.json').then(r => r.json()),
-                    fetch('donor_data_layer3.json').then(r => r.json())
+                    fetch('donor_data_layer1.json').then(r => {
+                        if (!r.ok) throw new Error(`Failed to load donor_data_layer1.json (${r.status})`);
+                        return r.json();
+                    }),
+                    fetch('donor_data_layer2.json').then(r => {
+                        if (!r.ok) throw new Error(`Failed to load donor_data_layer2.json (${r.status})`);
+                        return r.json();
+                    }),
+                    fetch('donor_data_layer3.json').then(r => {
+                        if (!r.ok) throw new Error(`Failed to load donor_data_layer3.json (${r.status})`);
+                        return r.json();
+                    })
                 ]);
 
                 layer1Data = l1;
@@ -1138,11 +1165,26 @@
 
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('landing').classList.add('active');
-                renderDashboard();
+
+                try {
+                    renderDashboard();
+                } catch (renderError) {
+                    console.error('Error rendering dashboard:', renderError);
+                    document.getElementById('loading').style.display = 'block';
+                    document.getElementById('loading').innerHTML = `
+                        <p style="color: var(--danger);">Error rendering dashboard</p>
+                        <p style="color: var(--text-muted); margin-top: 0.5rem;">${renderError.message}</p>
+                    `;
+                }
             } catch (error) {
-                document.getElementById('loading').innerHTML =
-                    '<p style="color: var(--danger);">Error loading data. Please ensure JSON files are in the same directory.</p>';
                 console.error('Error loading data:', error);
+                document.getElementById('loading').innerHTML = `
+                    <p style="color: var(--danger);">Error loading data</p>
+                    <p style="color: var(--text-muted); margin-top: 0.5rem;">${error.message}</p>
+                    <p style="color: var(--text-muted); margin-top: 1rem;">
+                        Please ensure JSON files are in the same directory as index.html.
+                    </p>
+                `;
             }
         }
 
