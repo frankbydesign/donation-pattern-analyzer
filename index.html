@@ -740,6 +740,9 @@
                     <div class="chart-container">
                         <canvas id="givingLevelChart"></canvas>
                     </div>
+                    <p style="color: var(--text-muted); margin-top: 1rem; font-size: 0.85rem; font-style: italic;">
+                        Health nonprofits typically see 60-70% of donors in the under-$100 tier. A higher share of mid-level ($100-$500) donors suggests strong cultivation.
+                    </p>
                 </div>
             </div>
 
@@ -781,6 +784,9 @@
                 </div>
                 <div class="card">
                     <div class="card-title">Lapse Risk Distribution</div>
+                    <p style="color: var(--text-muted); margin-bottom: 1rem; font-size: 0.9rem;">
+                        Lapse risk predicts which donors may stop giving based on their historical patterns. High-risk donors gave consistently before but have gone quiet. These are your best reactivation candidates—they already believe in the mission.
+                    </p>
                     <div class="chart-container">
                         <canvas id="riskChart"></canvas>
                     </div>
@@ -879,6 +885,9 @@
             <div class="grid-2">
                 <div class="card">
                     <div class="card-title">Upgrade/Downgrade Trends</div>
+                    <p style="color: var(--text-muted); margin-bottom: 1rem; font-size: 0.9rem;">
+                        This shows how many donors increased their giving (upgrades), decreased (downgrades), or stayed the same compared to their previous year. A healthy nonprofit sees more green than red. Large downgrade spikes may indicate donor fatigue or external economic pressure.
+                    </p>
                     <div class="chart-container">
                         <canvas id="upgradeChart"></canvas>
                     </div>
@@ -1166,32 +1175,90 @@
             const health = summary.health_indicators;
             const opps = summary.opportunities;
 
+            // Get benchmarks and trend data for contextual information
+            const benchmarks = layer3Data.static_benchmarks;
+            const healthBench = benchmarks.health_sector_benchmarks;
+            const allNonprofit = benchmarks.retention_rates.all_nonprofits;
+            const yearlyTrends = layer2Data.giving_patterns.yearly_trends;
+            const years = Object.keys(yearlyTrends).sort();
+
+            // Calculate trends (compare recent years)
+            const getRevenueTrend = () => {
+                if (years.length < 3) return { direction: 'stable', color: 'var(--text-muted)' };
+                const recent = yearlyTrends[years[years.length - 1]].total_amount;
+                const twoYearsAgo = yearlyTrends[years[years.length - 3]].total_amount;
+                const change = ((recent - twoYearsAgo) / twoYearsAgo) * 100;
+                if (change > 5) return { direction: 'Improving', color: 'var(--success)' };
+                if (change < -5) return { direction: 'Declining', color: 'var(--danger)' };
+                return { direction: 'Stable', color: 'var(--text-muted)' };
+            };
+
+            const getDonorTrend = () => {
+                if (years.length < 3) return { direction: 'stable', color: 'var(--text-muted)', prevRate: null };
+                const recent = yearlyTrends[years[years.length - 1]].unique_donors;
+                const twoYearsAgo = yearlyTrends[years[years.length - 3]].unique_donors;
+                const change = ((recent - twoYearsAgo) / twoYearsAgo) * 100;
+                // Calculate approx active rate two years ago
+                const prevActiveRate = (twoYearsAgo / metrics.total_donors * 100).toFixed(0);
+                if (change > 5) return { direction: 'Improving', color: 'var(--success)', prevRate: prevActiveRate };
+                if (change < -5) return { direction: 'Declining', color: 'var(--danger)', prevRate: prevActiveRate };
+                return { direction: 'Stable', color: 'var(--text-muted)', prevRate: prevActiveRate };
+            };
+
+            const revenueTrend = getRevenueTrend();
+            const donorTrend = getDonorTrend();
+
+            // Compare metrics to benchmarks
+            const avgGiftVsBenchmark = metrics.avg_gift_size >= healthBench.average_gift ? 'Above' : 'Below';
+            const avgGiftColor = metrics.avg_gift_size >= healthBench.average_gift ? 'var(--success)' : 'var(--danger)';
+
+            const activeRateVsBenchmark = metrics.active_donor_rate >= allNonprofit.overall_retention ? 'Above' : 'Below';
+            const activeRateColor = metrics.active_donor_rate >= allNonprofit.overall_retention ? 'var(--success)' : 'var(--danger)';
+
             document.getElementById('key-metrics').innerHTML = `
                 <div class="metric-card">
                     <div class="metric-value">${formatCurrency(metrics.total_revenue)}</div>
                     <div class="metric-label">Total Revenue</div>
+                    <div class="metric-context" style="font-size: 0.75rem; margin-top: 0.5rem; color: ${revenueTrend.color};">
+                        ${revenueTrend.direction} over recent years
+                    </div>
                 </div>
                 <div class="metric-card success">
                     <div class="metric-value">${formatNumber(metrics.total_donors)}</div>
                     <div class="metric-label">Total Donors</div>
+                    <div class="metric-context" style="font-size: 0.75rem; margin-top: 0.5rem; color: ${donorTrend.color};">
+                        ${donorTrend.direction} donor base
+                    </div>
                 </div>
                 <div class="metric-card">
                     <div class="metric-value">${formatCurrency(metrics.avg_gift_size)}</div>
                     <div class="metric-label">Average Gift</div>
+                    <div class="metric-context" style="font-size: 0.75rem; margin-top: 0.5rem; color: ${avgGiftColor};">
+                        ${avgGiftVsBenchmark} sector benchmark ($${healthBench.average_gift})
+                    </div>
                 </div>
                 <div class="metric-card ${metrics.active_donor_rate < 30 ? 'warning' : 'success'}">
                     <div class="metric-value">${formatPercent(metrics.active_donor_rate)}</div>
                     <div class="metric-label">Active Donor Rate</div>
+                    <div class="metric-context" style="font-size: 0.75rem; margin-top: 0.5rem; color: ${activeRateColor};">
+                        ${activeRateVsBenchmark} sector average (${allNonprofit.overall_retention}%). ${donorTrend.direction}.
+                    </div>
                 </div>
                 <div class="metric-card success">
                     <div class="metric-value">${formatNumber(health.champion_donors)}</div>
                     <div class="metric-label">Champion Donors</div>
                     <div class="metric-detail">${formatPercent(health.champion_percentage)} of total</div>
+                    <div class="metric-context" style="font-size: 0.75rem; margin-top: 0.25rem; color: var(--success);">
+                        Strong major donor cultivation
+                    </div>
                 </div>
                 <div class="metric-card danger">
                     <div class="metric-value">${formatNumber(health.total_at_risk)}</div>
                     <div class="metric-label">At Risk Donors</div>
                     <div class="metric-detail">${formatNumber(health.high_value_at_risk)} high-value</div>
+                    <div class="metric-context" style="font-size: 0.75rem; margin-top: 0.25rem; color: var(--danger);">
+                        Priority for retention outreach
+                    </div>
                 </div>
             `;
 
@@ -1741,10 +1808,10 @@
                 }
             });
 
-            // YoY metrics
+            // YoY metrics (most recent first)
             const yoyYears = Object.keys(yearlyTrends).sort();
             let yoyHtml = '<div style="max-height: 300px; overflow-y: auto;">';
-            for (let i = 1; i < yoyYears.length; i++) {
+            for (let i = yoyYears.length - 1; i >= 1; i--) {
                 const prev = yearlyTrends[yoyYears[i - 1]];
                 const curr = yearlyTrends[yoyYears[i]];
                 const revenueChange = ((curr.total_amount - prev.total_amount) / prev.total_amount * 100);
