@@ -28,7 +28,7 @@ export const TOUR_STEPS = [
   {
     id: 'navigation',
     title: 'Dashboard Navigation',
-    text: 'Use these tabs to navigate between different insight categories: Executive Summary, Donor Health, Giving Patterns, and more.',
+    text: 'Use these tabs to navigate between different insight categories: Executive Summary, Donor Health, Giving Patterns, and What-If Analysis.',
     attachTo: { element: 'nav', on: 'bottom' },
     buttons: [
       {
@@ -45,9 +45,9 @@ export const TOUR_STEPS = [
   },
   {
     id: 'metrics',
-    title: 'Key Metrics',
-    text: 'These metric cards show your most important KPIs at a glance. Color-coded borders indicate performance: green for healthy, amber for caution, red for attention needed.',
-    attachTo: { element: '.metrics-grid', on: 'bottom' },
+    title: 'Key Insights',
+    text: 'These insight cards show your most important metrics at a glance. Color-coded borders indicate performance: green for healthy, amber for caution, red for attention needed.',
+    attachTo: { element: '.metrics-grid', on: 'top' },
     buttons: [
       {
         text: 'Back',
@@ -62,10 +62,10 @@ export const TOUR_STEPS = [
     ]
   },
   {
-    id: 'charts',
-    title: 'Interactive Charts',
-    text: 'Charts are interactive! Hover to see detailed data, click legend items to show/hide data series, and look for guidance text explaining what to look for.',
-    attachTo: { element: '.chart-container', on: 'top' },
+    id: 'scenarios',
+    title: 'What-If Analysis',
+    text: 'Use the scenario panel to model different outcomes. Adjust retention and recurring donor rates to see how changes could impact your projected revenue.',
+    attachTo: { element: '.scenario-section', on: 'top' },
     buttons: [
       {
         text: 'Back',
@@ -82,8 +82,8 @@ export const TOUR_STEPS = [
   {
     id: 'glossary',
     title: 'Understanding Terms',
-    text: 'Look for dotted underlines under terms - hover over them to see definitions. You can also open the full glossary for comprehensive explanations.',
-    attachTo: { element: 'header', on: 'bottom' },
+    text: 'Look for dotted underlines under terms - hover over them to see definitions. Click the Glossary button for the complete reference guide.',
+    attachTo: { element: '.glossary-button', on: 'bottom' },
     buttons: [
       {
         text: 'Back',
@@ -98,9 +98,9 @@ export const TOUR_STEPS = [
     ]
   },
   {
-    id: 'export',
-    title: 'Export Your Insights',
-    text: 'Ready to share? Export your dashboard as a PDF report or PowerPoint presentation. Individual charts can be exported as images.',
+    id: 'accessibility',
+    title: 'Accessibility & Help',
+    text: 'Use these controls to adjust high contrast mode, font size, and other accessibility settings. You can restart this tour anytime by clicking the "Take Tour" button.',
     attachTo: { element: '.header-actions', on: 'bottom' },
     buttons: [
       {

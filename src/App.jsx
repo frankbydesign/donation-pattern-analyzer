@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './styles/index.css';
+import './styles/accessibility.css';
 
 // Components
 import InsightSummary, { InsightSummaryGroup } from './components/InsightSummary';
@@ -13,16 +14,27 @@ import AccessibilityPanel, {
 } from './components/Accessibility';
 
 /**
- * Example App demonstrating the new components
+ * Donation Pattern Analyzer - Main Application
+ * Helps nonprofits understand donor behavior and make data-driven decisions
  */
 function App() {
   const [isGlossaryOpen, setIsGlossaryOpen] = useState(false);
   const [isA11yPanelOpen, setIsA11yPanelOpen] = useState(false);
   const [scenarioResults, setScenarioResults] = useState(null);
+  const [activeTab, setActiveTab] = useState('overview');
 
   const handleRunScenario = (params) => {
     console.log('Running scenario with:', params);
-    setScenarioResults(params);
+    // Calculate projected impact based on scenario parameters
+    const baseRevenue = 500000;
+    const retentionImpact = ((params.retention - 45) / 100) * baseRevenue * 0.6;
+    const recurringImpact = (params.recurringGrowth / 100) * baseRevenue * 0.3;
+    setScenarioResults({
+      ...params,
+      projectedRevenue: baseRevenue + retentionImpact + recurringImpact,
+      retentionImpact,
+      recurringImpact
+    });
   };
 
   return (
@@ -42,7 +54,7 @@ function App() {
               </p>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="header-actions flex items-center gap-3">
               <Tour autoStart={false} />
               <HighContrastToggle />
               <button
@@ -56,7 +68,7 @@ function App() {
               </button>
               <button
                 onClick={() => setIsGlossaryOpen(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                className="glossary-button inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
               >
                 <span className="w-5 h-5 flex items-center justify-center rounded-full bg-slate-100 text-xs font-bold">?</span>
                 Glossary
@@ -65,10 +77,53 @@ function App() {
           </div>
         </header>
 
+        {/* Navigation Tabs */}
+        <nav className="bg-white border-b border-slate-200 px-6" aria-label="Dashboard navigation">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex gap-1">
+              {[
+                { id: 'overview', label: 'Executive Summary' },
+                { id: 'health', label: 'Donor Health' },
+                { id: 'patterns', label: 'Giving Patterns' },
+                { id: 'scenarios', label: 'What-If Analysis' }
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                    activeTab === tab.id
+                      ? 'border-indigo-600 text-indigo-600'
+                      : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
+                  }`}
+                  aria-selected={activeTab === tab.id}
+                  role="tab"
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </nav>
+
         {/* Main Content */}
         <main id="main-content" className="max-w-7xl mx-auto px-6 py-8">
-          {/* Insight Summaries */}
+          {/* Welcome Message */}
           <section className="mb-8">
+            <InsightSummary
+              title="Welcome to Donor Analytics"
+              summary="This dashboard helps you understand your donor base through data-driven insights. Analyze retention rates, identify at-risk donors, run what-if scenarios, and make informed decisions to strengthen your fundraising strategy."
+              variant="info"
+              icon="📊"
+            >
+              <p className="text-sm text-slate-600 mt-2">
+                Hover over <GlossaryTooltip termKey="retention">underlined terms</GlossaryTooltip> for quick definitions,
+                or open the Glossary for the complete reference guide.
+              </p>
+            </InsightSummary>
+          </section>
+
+          {/* Key Metrics Grid */}
+          <section className="metrics-grid mb-8">
             <h2 className="text-lg font-semibold text-slate-900 mb-4">
               Key Insights
             </h2>
@@ -95,8 +150,8 @@ function App() {
             </InsightSummaryGroup>
           </section>
 
-          {/* Scenario Panel Demo */}
-          <section className="mb-8">
+          {/* Scenario Panel */}
+          <section className="scenario-section mb-8">
             <h2 className="text-lg font-semibold text-slate-900 mb-4">
               What-If Analysis
             </h2>
@@ -107,12 +162,46 @@ function App() {
                 initialRecurringGrowth={15}
               />
 
-              {scenarioResults && (
-                <div className="bg-white rounded-lg border border-slate-200 p-6">
-                  <h3 className="font-semibold text-slate-900 mb-4">Scenario Results</h3>
-                  <pre className="text-sm bg-slate-50 p-4 rounded-lg overflow-auto">
-                    {JSON.stringify(scenarioResults, null, 2)}
-                  </pre>
+              {scenarioResults ? (
+                <div className="chart-container bg-white rounded-lg border border-slate-200 p-6">
+                  <h3 className="font-semibold text-slate-900 mb-4">Projected Impact</h3>
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
+                      <span className="text-slate-600">Base Revenue</span>
+                      <span className="font-semibold text-slate-900">$500,000</span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+                      <span className="text-slate-600">
+                        <GlossaryTooltip termKey="retention">Retention</GlossaryTooltip> Impact
+                      </span>
+                      <span className={`font-semibold ${scenarioResults.retentionImpact >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {scenarioResults.retentionImpact >= 0 ? '+' : ''}${Math.round(scenarioResults.retentionImpact).toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
+                      <span className="text-slate-600">
+                        <GlossaryTooltip termKey="recurringRate">Recurring</GlossaryTooltip> Impact
+                      </span>
+                      <span className={`font-semibold ${scenarioResults.recurringImpact >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+                        {scenarioResults.recurringImpact >= 0 ? '+' : ''}${Math.round(scenarioResults.recurringImpact).toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center p-4 bg-indigo-100 rounded-lg border-2 border-indigo-200">
+                      <span className="font-medium text-indigo-900">Projected Revenue</span>
+                      <span className="text-xl font-bold text-indigo-600">
+                        ${Math.round(scenarioResults.projectedRevenue).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                  <p className="mt-4 text-xs text-slate-500">
+                    Run at {new Date(scenarioResults.timestamp).toLocaleTimeString()}
+                  </p>
+                </div>
+              ) : (
+                <div className="chart-container bg-white rounded-lg border border-slate-200 border-dashed p-6 flex items-center justify-center">
+                  <p className="text-slate-400 text-center">
+                    Adjust the sliders and click "Run Scenario" to see projected impact
+                  </p>
                 </div>
               )}
             </div>
