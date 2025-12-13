@@ -1,0 +1,128 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Import accessibility styles */
+@import './accessibility.css';
+
+/* Base styles */
+@layer base {
+  html {
+    font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-slate-50 text-slate-900;
+  }
+
+  /* Mono font for numeric data */
+  .metric-value,
+  .metric-detail,
+  .metric-context,
+  .benchmark-value strong,
+  .severity-count,
+  td,
+  .legend-item span {
+    font-family: 'IBM Plex Mono', 'SF Mono', Consolas, monospace;
+  }
+}
+
+@layer components {
+  /* Card component */
+  .card {
+    @apply bg-white rounded-lg p-6 border border-slate-200 shadow-sm;
+  }
+
+  /* Metric card */
+  .metric-card {
+    @apply card border-l-4 border-l-indigo-600;
+  }
+
+  .metric-card.success {
+    @apply border-l-emerald-500;
+  }
+
+  .metric-card.warning {
+    @apply border-l-amber-500;
+  }
+
+  .metric-card.danger {
+    @apply border-l-red-600;
+  }
+
+  /* Button styles */
+  .btn {
+    @apply inline-flex items-center justify-center px-4 py-2 rounded-lg font-medium text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2;
+  }
+
+  .btn-primary {
+    @apply btn bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500;
+  }
+
+  .btn-secondary {
+    @apply btn bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-slate-500;
+  }
+
+  .btn-danger {
+    @apply btn bg-red-600 text-white hover:bg-red-700 focus:ring-red-500;
+  }
+
+  /* Badge styles */
+  .badge {
+    @apply inline-block px-2.5 py-0.5 rounded text-xs font-semibold uppercase tracking-wide;
+  }
+
+  .badge-success {
+    @apply bg-emerald-100 text-emerald-800;
+  }
+
+  .badge-warning {
+    @apply bg-amber-100 text-amber-800;
+  }
+
+  .badge-danger {
+    @apply bg-red-100 text-red-800;
+  }
+
+  .badge-info {
+    @apply bg-indigo-100 text-indigo-800;
+  }
+
+  /* Alert styles */
+  .alert {
+    @apply p-4 rounded-lg flex items-start gap-3;
+  }
+
+  .alert-warning {
+    @apply bg-amber-50 border border-amber-200 text-amber-800;
+  }
+
+  .alert-danger {
+    @apply bg-red-50 border border-red-200 text-red-800;
+  }
+
+  .alert-info {
+    @apply bg-blue-50 border border-blue-200 text-blue-800;
+  }
+
+  .alert-success {
+    @apply bg-emerald-50 border border-emerald-200 text-emerald-800;
+  }
+}
+
+@layer utilities {
+  /* Grid utilities */
+  .grid-auto-fit-200 {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+
+  .grid-auto-fit-300 {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  }
+
+  .grid-auto-fit-400 {
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  }
+}

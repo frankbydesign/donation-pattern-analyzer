@@ -1,0 +1,491 @@
+/**
+ * Accessibility Styles
+ * WCAG 2.1 AA compliant styles with high contrast mode support
+ */
+
+/* ==========================================
+   Screen Reader Only Utility
+   ========================================== */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.not-sr-only {
+  position: static;
+  width: auto;
+  height: auto;
+  padding: 0;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}
+
+/* ==========================================
+   Focus Styles
+   ========================================== */
+*:focus {
+  outline: none;
+}
+
+*:focus-visible {
+  outline: 2px solid #4F46E5;
+  outline-offset: 2px;
+}
+
+/* Button and interactive element focus */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[role="button"]:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid #4F46E5;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Skip link visibility on focus */
+.skip-link:focus {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 9999;
+  padding: 0.75rem 1.5rem;
+  background: #4F46E5;
+  color: white;
+  font-weight: 600;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* ==========================================
+   High Contrast Mode
+   ========================================== */
+html.high-contrast {
+  /* Override CSS custom properties for high contrast */
+  --primary: #0000EE;
+  --primary-light: #0000CC;
+  --secondary: #008000;
+  --warning: #FF8C00;
+  --danger: #CC0000;
+  --bg-light: #FFFFFF;
+  --bg-card: #FFFFFF;
+  --text-dark: #000000;
+  --text-muted: #000000;
+  --border: #000000;
+  --border-light: #000000;
+}
+
+html.high-contrast body {
+  background: #FFFFFF;
+  color: #000000;
+}
+
+/* High contrast cards and containers */
+html.high-contrast .card,
+html.high-contrast .metric-card,
+html.high-contrast .modal {
+  border: 2px solid #000000;
+  box-shadow: none;
+}
+
+/* High contrast buttons */
+html.high-contrast button,
+html.high-contrast .btn,
+html.high-contrast [role="button"] {
+  border: 2px solid currentColor;
+}
+
+html.high-contrast button:hover,
+html.high-contrast .btn:hover,
+html.high-contrast [role="button"]:hover {
+  background: #000000;
+  color: #FFFFFF;
+}
+
+/* High contrast links */
+html.high-contrast a {
+  color: #0000EE;
+  text-decoration: underline;
+}
+
+html.high-contrast a:visited {
+  color: #551A8B;
+}
+
+html.high-contrast a:hover {
+  background: #0000EE;
+  color: #FFFFFF;
+}
+
+/* High contrast badges */
+html.high-contrast .badge {
+  border: 1px solid currentColor;
+}
+
+/* High contrast focus indicators */
+html.high-contrast *:focus-visible {
+  outline: 3px solid #000000;
+  outline-offset: 3px;
+}
+
+/* High contrast form elements */
+html.high-contrast input,
+html.high-contrast select,
+html.high-contrast textarea {
+  border: 2px solid #000000;
+  background: #FFFFFF;
+  color: #000000;
+}
+
+/* High contrast tables */
+html.high-contrast th,
+html.high-contrast td {
+  border: 1px solid #000000;
+}
+
+/* High contrast charts - add patterns */
+html.high-contrast canvas {
+  filter: contrast(1.2);
+}
+
+/* ==========================================
+   Reduced Motion
+   ========================================== */
+html.reduced-motion *,
+html.reduced-motion *::before,
+html.reduced-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ==========================================
+   Font Size Adjustments
+   ========================================== */
+html[data-font-size="small"] {
+  font-size: 14px;
+}
+
+html[data-font-size="normal"] {
+  font-size: 16px;
+}
+
+html[data-font-size="large"] {
+  font-size: 18px;
+}
+
+html[data-font-size="x-large"] {
+  font-size: 20px;
+}
+
+/* ==========================================
+   Responsive Breakpoints
+   ========================================== */
+
+/* Mobile first: base styles for smallest screens */
+@media (max-width: 480px) {
+  .container {
+    padding: 0.75rem;
+  }
+
+  .card {
+    padding: 1rem;
+  }
+
+  .metrics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .grid-2,
+  .grid-3 {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-container {
+    height: 250px;
+  }
+
+  .modal {
+    margin: 0.5rem;
+    max-height: calc(100vh - 1rem);
+  }
+
+  h1 { font-size: 1.5rem; }
+  h2 { font-size: 1.25rem; }
+  h3 { font-size: 1.125rem; }
+
+  .metric-value {
+    font-size: 1.5rem;
+  }
+
+  /* Stack buttons on mobile */
+  .button-group {
+    flex-direction: column;
+  }
+
+  .button-group button {
+    width: 100%;
+  }
+}
+
+/* Small tablets and large phones */
+@media (min-width: 481px) and (max-width: 768px) {
+  .container {
+    padding: 1rem;
+  }
+
+  .metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .grid-3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Tablets */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .container {
+    padding: 1.5rem;
+  }
+
+  .metrics-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .grid-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Desktop */
+@media (min-width: 1025px) {
+  .container {
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .metrics-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Large screens */
+@media (min-width: 1440px) {
+  .container {
+    max-width: 1600px;
+  }
+}
+
+/* ==========================================
+   Print Styles
+   ========================================== */
+@media print {
+  * {
+    background: white !important;
+    color: black !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  nav,
+  .no-print,
+  button,
+  .modal-overlay {
+    display: none !important;
+  }
+
+  .card {
+    break-inside: avoid;
+    border: 1px solid #000;
+    page-break-inside: avoid;
+  }
+
+  .chart-container {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  a[href]::after {
+    content: " (" attr(href) ")";
+    font-size: 0.8em;
+    color: #666;
+  }
+
+  h1, h2, h3 {
+    page-break-after: avoid;
+  }
+}
+
+/* ==========================================
+   Touch Target Sizes (WCAG 2.5.5)
+   ========================================== */
+@media (pointer: coarse) {
+  button,
+  a,
+  input[type="checkbox"],
+  input[type="radio"],
+  select,
+  [role="button"],
+  [role="link"],
+  [role="tab"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Ensure adequate spacing between touch targets */
+  nav a,
+  .button-group button {
+    padding: 0.75rem 1rem;
+    margin: 0.25rem;
+  }
+}
+
+/* ==========================================
+   Color Blind Safe Patterns
+   ========================================== */
+.pattern-primary {
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 5px,
+    rgba(79, 70, 229, 0.1) 5px,
+    rgba(79, 70, 229, 0.1) 10px
+  );
+}
+
+.pattern-secondary {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 5px,
+    rgba(16, 185, 129, 0.1) 5px,
+    rgba(16, 185, 129, 0.1) 10px
+  );
+}
+
+.pattern-warning {
+  background-image: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 5px,
+    rgba(245, 158, 11, 0.1) 5px,
+    rgba(245, 158, 11, 0.1) 10px
+  );
+}
+
+.pattern-danger {
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 5px,
+    rgba(220, 38, 38, 0.1) 5px,
+    rgba(220, 38, 38, 0.1) 10px
+  );
+}
+
+/* ==========================================
+   ARIA Live Regions
+   ========================================== */
+[aria-live="polite"],
+[aria-live="assertive"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ==========================================
+   Loading States
+   ========================================== */
+[aria-busy="true"] {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.loading-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.loading-spinner {
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+html.reduced-motion .loading-spinner {
+  animation: none;
+  border-right-color: currentColor;
+  opacity: 0.5;
+}
+
+/* ==========================================
+   Error and Success States
+   ========================================== */
+[aria-invalid="true"] {
+  border-color: #DC2626 !important;
+}
+
+[aria-invalid="true"]:focus-visible {
+  outline-color: #DC2626;
+}
+
+.error-message {
+  color: #DC2626;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+.success-message {
+  color: #059669;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
