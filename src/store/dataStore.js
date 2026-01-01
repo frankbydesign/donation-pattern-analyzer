@@ -36,17 +36,26 @@ const useDataStore = create((set, get) => ({
    * @returns {Promise<void>}
    */
   loadData: async () => {
+    console.log('[DATASTORE] loadData called');
     set({ isLoading: true, error: null });
 
     try {
       // Fetch all three data layers in parallel
       // Use BASE_URL to ensure paths work in both dev and production (GitHub Pages)
       const baseUrl = import.meta.env.BASE_URL;
+      console.log('[DATASTORE] BASE_URL:', baseUrl);
+
       const [layer1Response, layer2Response, layer3Response] = await Promise.all([
         fetch(`${baseUrl}data/donor_data_layer1.json`),
         fetch(`${baseUrl}data/donor_data_layer2.json`),
         fetch(`${baseUrl}data/donor_data_layer3.json`)
       ]);
+
+      console.log('[DATASTORE] Fetch responses:', {
+        layer1: layer1Response.ok,
+        layer2: layer2Response.ok,
+        layer3: layer3Response.ok
+      });
 
       // Check for fetch errors
       if (!layer1Response.ok) throw new Error('Failed to load layer1 data');
@@ -60,6 +69,12 @@ const useDataStore = create((set, get) => ({
         layer3Response.json()
       ]);
 
+      console.log('[DATASTORE] Data parsed:', {
+        layer1Donors: layer1Data?.donors?.length,
+        hasLayer2: !!layer2Data,
+        hasLayer3: !!layer3Data
+      });
+
       // Update store with loaded data
       set({
         layer1: layer1Data,
@@ -68,6 +83,8 @@ const useDataStore = create((set, get) => ({
         isLoading: false,
         error: null
       });
+
+      console.log('[DATASTORE] Store updated with data');
 
     } catch (error) {
       console.error('Error loading data:', error);
@@ -107,13 +124,22 @@ const useDataStore = create((set, get) => ({
    * @returns {Array} Filtered array of donor objects with filtered gifts
    */
   getFilteredDonors: () => {
+    console.log('[DATASTORE] getFilteredDonors called');
     const { layer1, filters } = get();
 
+    console.log('[DATASTORE] getFilteredDonors - layer1:', {
+      hasLayer1: !!layer1,
+      hasDonors: !!layer1?.donors,
+      donorCount: layer1?.donors?.length
+    });
+
     if (!layer1?.donors) {
+      console.log('[DATASTORE] getFilteredDonors - no donors, returning []');
       return [];
     }
 
     let filteredDonors = [...layer1.donors];
+    console.log('[DATASTORE] getFilteredDonors - initial count:', filteredDonors.length);
 
     // Apply date range filter
     if (filters.dateRange) {
@@ -159,8 +185,11 @@ const useDataStore = create((set, get) => ({
    * @returns {Array} All donor objects
    */
   getAllDonors: () => {
+    console.log('[DATASTORE] getAllDonors called');
     const { layer1 } = get();
-    return layer1?.donors || [];
+    const donors = layer1?.donors || [];
+    console.log('[DATASTORE] getAllDonors - returning', donors.length, 'donors');
+    return donors;
   },
 
   /**
