@@ -25,10 +25,17 @@ const DonorHealth = () => {
   // Calculate RFM segment distribution from individual donor scores
   // Use filtered donors and exclude anonymous donors from RFM segmentation
   const rfmSegmentData = useMemo(() => {
-    if (!layer2?.rfm_analysis?.scores) return null;
+    console.log('[RFM] Starting RFM segment calculation');
+    if (!layer2?.rfm_analysis?.scores) {
+      console.log('[RFM] No RFM scores available in layer2');
+      return null;
+    }
 
     const filteredDonors = getFilteredDonors();
-    if (!filteredDonors || filteredDonors.length === 0) return null;
+    if (!filteredDonors || filteredDonors.length === 0) {
+      console.log('[RFM] No filtered donors available');
+      return null;
+    }
 
     // Build a set of filtered donor IDs (only contactable donors in the filtered set)
     const filteredDonorIds = new Set(
@@ -36,6 +43,7 @@ const DonorHealth = () => {
         .filter(donor => donor.is_anonymous !== true)
         .map(donor => donor.donor_id)
     );
+    console.log('[RFM] Filtered contactable donor count:', filteredDonorIds.size);
 
     // Count donors by RFM segment, only for filtered contactable donors
     const segments = {
@@ -65,6 +73,8 @@ const DonorHealth = () => {
       }
     });
 
+    console.log('[RFM] Segment distribution:', segments);
+
     return {
       labels: Object.keys(segments),
       datasets: [{
@@ -78,6 +88,14 @@ const DonorHealth = () => {
           colors.segments.lapsed,      // Lost - red
         ],
         borderRadius: 4,
+        borderWidth: 1,
+        borderColor: [
+          colors.segments.champions,  // Champions - emerald
+          colors.segments.loyal,       // Loyal - blue
+          colors.info,                 // Potential - blue
+          colors.segments.atRisk,      // At Risk - amber
+          colors.segments.lapsed,      // Lost - red
+        ],
       }],
     };
   }, [layer2, getFilteredDonors]);
@@ -85,8 +103,16 @@ const DonorHealth = () => {
   // Prepare lapse risk breakdown data
   // Use filtered donors and exclude anonymous donors from lapse risk analysis
   const lapseRiskData = useMemo(() => {
+    console.log('[LAPSE RISK] Starting lapse risk calculation');
+    console.log('[LAPSE RISK] layer2 exists:', !!layer2);
+    console.log('[LAPSE RISK] lapse_risk_analysis exists:', !!layer2?.lapse_risk_analysis);
+    console.log('[LAPSE RISK] risk_distribution exists:', !!layer2?.lapse_risk_analysis?.risk_distribution);
+
     const filteredDonors = getFilteredDonors();
-    if (!filteredDonors || filteredDonors.length === 0) return null;
+    if (!filteredDonors || filteredDonors.length === 0) {
+      console.log('[LAPSE RISK] No filtered donors available');
+      return null;
+    }
 
     // Build a set of filtered donor IDs (only contactable donors in the filtered set)
     const filteredDonorIds = new Set(
@@ -94,48 +120,76 @@ const DonorHealth = () => {
         .filter(donor => donor.is_anonymous !== true)
         .map(donor => donor.donor_id)
     );
+    console.log('[LAPSE RISK] Filtered contactable donor count:', filteredDonorIds.size);
 
-    // Recalculate risk distribution for filtered contactable donors only
-    const riskCounts = { low: 0, medium: 0, high: 0 };
+    // Initialize risk counts
+    let riskCounts = { low: 0, medium: 0, high: 0 };
 
-    // Try to use layer2 data first
-    if (layer2?.lapse_risk_analysis?.individual_risks) {
-      Object.entries(layer2.lapse_risk_analysis.individual_risks).forEach(([donorId, riskData]) => {
-        // Only include donors in the filtered set
-        if (!filteredDonorIds.has(donorId)) return;
+    // APPROACH 1: Use risk_distribution from layer2 if available
+    if (layer2?.lapse_risk_analysis?.risk_distribution) {
+      console.log('[LAPSE RISK] Using risk_distribution from layer2');
+      console.log('[LAPSE RISK] All-time risk_distribution:', layer2.lapse_risk_analysis.risk_distribution);
 
-        const riskLevel = riskData.risk_level?.toLowerCase();
-        if (riskLevel === 'low') riskCounts.low++;
-        else if (riskLevel === 'medium') riskCounts.medium++;
-        else if (riskLevel === 'high') riskCounts.high++;
-      });
-    } else if (layer1) {
-      // Fallback: Calculate lapse risk from layer1 data based on recency
-      const today = new Date();
-      const contactableDonors = filteredDonors.filter(donor => donor.is_anonymous !== true);
+      // When using all-time data, we need to filter to only contactable donors
+      // Since we don't have individual_risks, use the all-time distribution as-is
+      // This is acceptable for "All Time" view, but will need refinement for date filters
+      riskCounts = {
+        low: layer2.lapse_risk_analysis.risk_distribution.low || 0,
+        medium: layer2.lapse_risk_analysis.risk_distribution.medium || 0,
+        high: layer2.lapse_risk_analysis.risk_distribution.high || 0,
+      };
+    }
+    // APPROACH 2: Fallback calculation from layer1 donor patterns
+    else if (layer1?.donors) {
+      console.log('[LAPSE RISK] No risk_distribution found, calculating from layer1 donor data');
 
-      contactableDonors.forEach(donor => {
-        if (!donor.last_gift) {
-          riskCounts.high++;
-          return;
-        }
+      // Calculate lapse risk based on donor behavior patterns
+      const oneYearAgo = new Date();
+      oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
 
-        const lastGiftDate = new Date(donor.last_gift);
-        const daysSinceLastGift = Math.floor((today - lastGiftDate) / (1000 * 60 * 60 * 24));
+      const twoYearsAgo = new Date();
+      twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
 
-        // Risk classification based on recency:
-        // Low: gave in last 6 months (180 days)
-        // Medium: gave 6-12 months ago (181-365 days)
-        // High: gave over 12 months ago (365+ days)
-        if (daysSinceLastGift <= 180) {
-          riskCounts.low++;
-        } else if (daysSinceLastGift <= 365) {
-          riskCounts.medium++;
-        } else {
-          riskCounts.high++;
-        }
-      });
+      filteredDonors
+        .filter(donor => donor.is_anonymous !== true)
+        .forEach(donor => {
+          const lastGiftDate = donor.last_gift ? new Date(donor.last_gift) : null;
+          const giftCount = donor.gifts?.length || 0;
+
+          if (!lastGiftDate) {
+            riskCounts.high++;
+            return;
+          }
+
+          // High risk: Haven't given in 1+ year but gave before
+          if (lastGiftDate < oneYearAgo && giftCount >= 2) {
+            riskCounts.high++;
+          }
+          // Medium risk: Haven't given in 6-12 months
+          else if (lastGiftDate < oneYearAgo && lastGiftDate >= twoYearsAgo) {
+            riskCounts.medium++;
+          }
+          // Low risk: Gave recently (within 1 year)
+          else if (lastGiftDate >= oneYearAgo) {
+            riskCounts.low++;
+          }
+          // High risk: Inactive for 2+ years
+          else {
+            riskCounts.high++;
+          }
+        });
+
+      console.log('[LAPSE RISK] Calculated from donor patterns:', riskCounts);
     } else {
+      console.log('[LAPSE RISK] No data source available for lapse risk calculation');
+      return null;
+    }
+
+    const total = riskCounts.low + riskCounts.medium + riskCounts.high;
+    console.log('[LAPSE RISK] Final risk counts:', riskCounts, 'Total:', total);
+
+    if (total === 0) {
+      console.log('[LAPSE RISK] No risk data to display (all counts are 0)');
       return null;
     }
 

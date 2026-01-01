@@ -44,7 +44,7 @@ const GivingPatterns = () => {
       rawData: monthCounts,
       monthlyRevenue,
     };
-  }, [getFilteredGifts, filters]);
+  }, [filters, getFilteredGifts]);
 
   // Calculate day of week patterns from filtered gifts
   const dayOfWeekData = useMemo(() => {
