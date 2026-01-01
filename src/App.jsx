@@ -13,11 +13,17 @@ import AccessibilityPanel, {
   HighContrastToggle
 } from './components/Accessibility';
 
+// Hooks
+import useDataLoader from './hooks/useDataLoader';
+
 /**
  * Donation Pattern Analyzer - Main Application
  * Helps nonprofits understand donor behavior and make data-driven decisions
  */
 function App() {
+  // Load donor data
+  const { isLoading, error, data } = useDataLoader();
+
   const [isGlossaryOpen, setIsGlossaryOpen] = useState(false);
   const [isA11yPanelOpen, setIsA11yPanelOpen] = useState(false);
   const [scenarioResults, setScenarioResults] = useState(null);
@@ -107,6 +113,41 @@ function App() {
 
         {/* Main Content */}
         <main id="main-content" className="max-w-7xl mx-auto px-6 py-8">
+          {/* Loading State */}
+          {isLoading && (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
+                <p className="text-slate-600 font-medium">Loading donor data...</p>
+                <p className="text-sm text-slate-500 mt-2">Fetching analytics and insights</p>
+              </div>
+            </div>
+          )}
+
+          {/* Error State */}
+          {error && !isLoading && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-8">
+              <div className="flex items-start gap-3">
+                <svg className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div>
+                  <h3 className="font-semibold text-red-900 mb-1">Failed to Load Data</h3>
+                  <p className="text-sm text-red-700">{error}</p>
+                  <button
+                    onClick={() => window.location.reload()}
+                    className="mt-3 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
+                  >
+                    Retry
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Main Content - Only show when data is loaded */}
+          {!isLoading && !error && data && (
+            <>
           {/* Welcome Message */}
           <section className="mb-8">
             <InsightSummary
@@ -224,6 +265,8 @@ function App() {
               </p>
             </div>
           </section>
+            </>
+          )}
         </main>
 
         {/* Modals */}
