@@ -282,83 +282,6 @@ const ConcentrationRisk = () => {
         </div>
       )}
 
-      {/* Impact Summary (shown when simulating) */}
-      {isSimulating && simulatedMetrics && (
-        <div className="bg-gradient-to-br from-red-50 to-orange-50 border-2 border-red-200 rounded-lg p-6">
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold text-red-900">Simulated Impact</h3>
-            <p className="text-sm text-red-700 mt-1">
-              Showing projected revenue impact of losing {simulatedMetrics.excludedCount} donor{simulatedMetrics.excludedCount !== 1 ? 's' : ''}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Revenue Impact */}
-            <div className="bg-white rounded-lg p-4 border border-red-200">
-              <p className="text-sm font-medium text-slate-600 mb-2">Projected Revenue</p>
-              <div className="space-y-1">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-sm text-slate-500 line-through">
-                    ${topDonorsData.totalRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                  </span>
-                </div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-bold text-slate-900">
-                    ${simulatedMetrics.simulatedRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                  </span>
-                </div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-sm font-semibold text-red-600">
-                    −${simulatedMetrics.excludedRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })} (−{simulatedMetrics.revenueLoss.toFixed(1)}%)
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Remaining Donors */}
-            <div className="bg-white rounded-lg p-4 border border-red-200">
-              <p className="text-sm font-medium text-slate-600 mb-2">Remaining Donors</p>
-              <div className="space-y-1">
-                <div className="text-2xl font-bold text-slate-900">
-                  {simulatedMetrics.activeDonors.length}
-                </div>
-                <div className="text-sm text-slate-600">
-                  of {topDonorsData.totalDonors} total donors
-                </div>
-              </div>
-            </div>
-
-            {/* New Top Donor */}
-            <div className="bg-white rounded-lg p-4 border border-red-200">
-              <p className="text-sm font-medium text-slate-600 mb-2">New Top Donor</p>
-              <div className="space-y-1">
-                {simulatedMetrics.newTopDonor ? (
-                  <>
-                    <div className="text-lg font-bold text-slate-900">
-                      {simulatedMetrics.newTopDonor.donor_id}
-                    </div>
-                    <div className="text-sm text-slate-600">
-                      ${simulatedMetrics.newTopDonor.total_giving.toLocaleString(undefined, { maximumFractionDigits: 0 })} total
-                    </div>
-                  </>
-                ) : (
-                  <div className="text-sm text-slate-500">No donors remaining</div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Recovery Analysis */}
-          <div className="mt-4 p-4 bg-white rounded-lg border border-red-200">
-            <p className="text-sm font-medium text-slate-700 mb-1">Time to Recover</p>
-            <p className="text-sm text-slate-600">
-              Approximately <span className="font-semibold text-slate-900">{simulatedMetrics.donorsToRecover} new donors</span> at
-              average gift of <span className="font-semibold">${simulatedMetrics.avgGiftSize.toFixed(0)}</span> would be needed to replace the lost revenue.
-            </p>
-          </div>
-        </div>
-      )}
-
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Revenue Concentration Chart */}
@@ -438,6 +361,83 @@ const ConcentrationRisk = () => {
         </div>
       </div>
 
+      {/* Impact Summary (shown when simulating) */}
+      {isSimulating && simulatedMetrics && (
+        <div className="bg-gradient-to-br from-red-50 to-orange-50 border-2 border-red-200 rounded-lg p-6">
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold text-red-900">Simulated Impact</h3>
+            <p className="text-sm text-red-700 mt-1">
+              Showing projected revenue impact of losing {simulatedMetrics.excludedCount} donor{simulatedMetrics.excludedCount !== 1 ? 's' : ''}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Revenue Impact */}
+            <div className="bg-white rounded-lg p-4 border border-red-200">
+              <p className="text-sm font-medium text-slate-600 mb-2">Projected Revenue</p>
+              <div className="space-y-1">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-sm text-slate-500 line-through">
+                    ${topDonorsData.totalRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                  </span>
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-2xl font-bold text-slate-900">
+                    ${simulatedMetrics.simulatedRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                  </span>
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-sm font-semibold text-red-600">
+                    −${simulatedMetrics.excludedRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })} (−{simulatedMetrics.revenueLoss.toFixed(1)}%)
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Remaining Donors */}
+            <div className="bg-white rounded-lg p-4 border border-red-200">
+              <p className="text-sm font-medium text-slate-600 mb-2">Remaining Donors</p>
+              <div className="space-y-1">
+                <div className="text-2xl font-bold text-slate-900">
+                  {simulatedMetrics.activeDonors.length}
+                </div>
+                <div className="text-sm text-slate-600">
+                  of {topDonorsData.totalDonors} total donors
+                </div>
+              </div>
+            </div>
+
+            {/* New Top Donor */}
+            <div className="bg-white rounded-lg p-4 border border-red-200">
+              <p className="text-sm font-medium text-slate-600 mb-2">New Top Donor</p>
+              <div className="space-y-1">
+                {simulatedMetrics.newTopDonor ? (
+                  <>
+                    <div className="text-lg font-bold text-slate-900">
+                      {simulatedMetrics.newTopDonor.donor_id}
+                    </div>
+                    <div className="text-sm text-slate-600">
+                      ${simulatedMetrics.newTopDonor.total_giving.toLocaleString(undefined, { maximumFractionDigits: 0 })} total
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-sm text-slate-500">No donors remaining</div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Recovery Analysis */}
+          <div className="mt-4 p-4 bg-white rounded-lg border border-red-200">
+            <p className="text-sm font-medium text-slate-700 mb-1">Time to Recover</p>
+            <p className="text-sm text-slate-600">
+              Approximately <span className="font-semibold text-slate-900">{simulatedMetrics.donorsToRecover} new donors</span> at
+              average gift of <span className="font-semibold">${simulatedMetrics.avgGiftSize.toFixed(0)}</span> would be needed to replace the lost revenue.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Top Donors Table */}
       <div className="bg-white rounded-lg border border-slate-200">
         <div className="px-6 pt-6 pb-4 border-b border-slate-100">
@@ -484,15 +484,6 @@ const ConcentrationRisk = () => {
               >
                 What if we lose our top 10 donors?
               </button>
-
-              {isSimulating && (
-                <button
-                  onClick={handleReset}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors text-sm ml-auto"
-                >
-                  Reset Simulation
-                </button>
-              )}
             </div>
           </div>
         </div>
