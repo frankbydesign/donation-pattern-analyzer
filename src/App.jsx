@@ -35,8 +35,25 @@ function App() {
   const [scenarioResults, setScenarioResults] = useState(null);
   const [activeTab, setActiveTab] = useState('executive');
 
+  // Calculate latest gift date from data
+  const latestDataDate = React.useMemo(() => {
+    if (!data?.layer1?.donors) return null;
+
+    let latestDate = null;
+    data.layer1.donors.forEach(donor => {
+      if (!donor.gifts) return;
+      donor.gifts.forEach(gift => {
+        const giftDate = new Date(gift.date);
+        if (!latestDate || giftDate > latestDate) {
+          latestDate = giftDate;
+        }
+      });
+    });
+
+    return latestDate;
+  }, [data]);
+
   const handleRunScenario = (params) => {
-    console.log('Running scenario with:', params);
     // Calculate projected impact based on scenario parameters
     const baseRevenue = 500000;
     const retentionImpact = ((params.retention - 45) / 100) * baseRevenue * 0.6;
@@ -230,6 +247,19 @@ function App() {
         {/* Modals */}
         <Glossary isOpen={isGlossaryOpen} onClose={() => setIsGlossaryOpen(false)} />
         <AccessibilityPanel isOpen={isA11yPanelOpen} onClose={() => setIsA11yPanelOpen(false)} />
+
+        {/* Footer */}
+        <footer className="bg-white border-t border-slate-200 mt-12 px-6 py-4">
+          <div className="max-w-7xl mx-auto">
+            <p className="text-sm text-slate-500 text-center">
+              {latestDataDate ? (
+                <>Data as of {latestDataDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</>
+              ) : (
+                <>Loading data...</>
+              )}
+            </p>
+          </div>
+        </footer>
       </div>
     </AccessibilityProvider>
   );

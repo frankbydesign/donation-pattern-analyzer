@@ -58,12 +58,6 @@ const useDataStore = create((set, get) => ({
         error: null
       });
 
-      console.log('Data loaded successfully:', {
-        layer1Donors: layer1Data.donors?.length || 0,
-        layer2Summary: layer1Data.summary,
-        layer3Benchmarks: Object.keys(layer3Data.static_benchmarks || {}).length
-      });
-
     } catch (error) {
       console.error('Error loading data:', error);
       set({
@@ -127,14 +121,12 @@ const useDataStore = create((set, get) => ({
     if (filters.status) {
       // TODO: Filter by donor status when layer2 segmentation is integrated
       // For now, this is a placeholder
-      console.log('Status filter not yet implemented:', filters.status);
     }
 
     // Apply segment filter (stub for now - will be enhanced when segments are integrated)
     if (filters.segment) {
       // TODO: Filter by segment (e.g., champions, at-risk) when layer2 integration is complete
       // For now, this is a placeholder
-      console.log('Segment filter not yet implemented:', filters.segment);
     }
 
     return filteredDonors;
