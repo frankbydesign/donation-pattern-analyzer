@@ -449,23 +449,35 @@ const ConcentrationRisk = () => {
           )}
         </ChartCard>
 
-        {/* Key Metrics */}
+        {/* Key Metrics with Progress Bars */}
         <div className="bg-white rounded-lg border border-slate-200 p-6">
           <h3 className="text-lg font-semibold text-slate-900 mb-4">Key Concentration Metrics</h3>
           <div className="space-y-4">
             {topDonorsData.concentrationData.slice(0, 4).map((point, idx) => {
-              const indicator = point.percentage > 50 ? 'red' : point.percentage > 30 ? 'amber' : 'emerald';
+              const percentage = point.percentage;
+              const indicator = percentage > 50 ? 'red' : percentage > 30 ? 'amber' : 'emerald';
+              const barColor = percentage > 50 ? 'bg-red-500' : percentage > 30 ? 'bg-amber-500' : 'bg-emerald-500';
+              const bgColor = percentage > 50 ? 'bg-red-100' : percentage > 30 ? 'bg-amber-100' : 'bg-emerald-100';
+
               return (
-                <div key={idx} className="flex items-center justify-between">
-                  <span className="text-sm text-slate-600">Top {point.n} donors</span>
-                  <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 bg-${indicator}-500 rounded-full`}></div>
-                    <span className="text-sm font-semibold text-slate-900">
-                      {point.percentage.toFixed(1)}%
-                    </span>
-                    <span className="text-xs text-slate-500">
-                      (${point.revenue.toLocaleString(undefined, { maximumFractionDigits: 0 })})
-                    </span>
+                <div key={idx} className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-slate-700">Top {point.n} donors</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-slate-900">
+                        {point.percentage.toFixed(1)}%
+                      </span>
+                      <span className="text-xs text-slate-500">
+                        (${point.revenue.toLocaleString(undefined, { maximumFractionDigits: 0 })})
+                      </span>
+                    </div>
+                  </div>
+                  {/* Progress Bar */}
+                  <div className={`w-full h-2 ${bgColor} rounded-full overflow-hidden`}>
+                    <div
+                      className={`h-full ${barColor} rounded-full transition-all duration-300`}
+                      style={{ width: `${Math.min(percentage, 100)}%` }}
+                    ></div>
                   </div>
                 </div>
               );
@@ -492,6 +504,40 @@ const ConcentrationRisk = () => {
             </button>
           </div>
         </div>
+
+        {/* Inline Impact Summary (sticky when donors are selected) */}
+        {isSimulating && simulatedMetrics && (
+          <div className="sticky top-0 z-10 bg-gradient-to-r from-red-50 to-orange-50 border-b-2 border-red-300 px-6 py-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-6">
+                <div>
+                  <p className="text-xs text-red-700 font-medium">Selected Donors</p>
+                  <p className="text-lg font-bold text-red-900">{simulatedMetrics.excludedCount}</p>
+                </div>
+                <div className="h-8 w-px bg-red-300"></div>
+                <div>
+                  <p className="text-xs text-red-700 font-medium">Revenue Impact</p>
+                  <p className="text-lg font-bold text-red-900">
+                    −${simulatedMetrics.excludedRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                  </p>
+                </div>
+                <div className="h-8 w-px bg-red-300"></div>
+                <div>
+                  <p className="text-xs text-red-700 font-medium">% of Total</p>
+                  <p className="text-lg font-bold text-red-900">
+                    −{simulatedMetrics.revenueLoss.toFixed(1)}%
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={handleReset}
+                className="px-4 py-2 bg-white text-red-700 font-medium text-sm rounded-lg hover:bg-red-50 border border-red-300 transition-colors"
+              >
+                Clear Selection
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="overflow-x-auto">
           <table className="w-full">
