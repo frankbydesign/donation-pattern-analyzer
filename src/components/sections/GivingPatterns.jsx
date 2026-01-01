@@ -44,7 +44,7 @@ const GivingPatterns = () => {
       rawData: monthCounts,
       monthlyRevenue,
     };
-  }, [getFilteredGifts]);
+  }, [filters, getFilteredGifts]);
 
   // Calculate day of week patterns from filtered gifts
   const dayOfWeekData = useMemo(() => {
@@ -77,7 +77,7 @@ const GivingPatterns = () => {
       }],
       rawData: dayCounts,
     };
-  }, [getFilteredGifts]);
+  }, [filters, getFilteredGifts]);
 
   // Calculate gift amount distribution from filtered gifts
   const amountDistributionData = useMemo(() => {
@@ -118,7 +118,7 @@ const GivingPatterns = () => {
       rawData: rangeCounts,
       ranges,
     };
-  }, [getFilteredGifts]);
+  }, [filters, getFilteredGifts]);
 
   // Calculate key metrics
   const metrics = useMemo(() => {
