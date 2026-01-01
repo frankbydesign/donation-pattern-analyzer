@@ -656,7 +656,7 @@ const ExecutiveSummary = () => {
             <p className="text-sm text-slate-600 mt-1">Auto-generated insights based on your donor data</p>
           </div>
 
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {insights.map((insight, index) => {
               const severityConfig = {
                 critical: {
