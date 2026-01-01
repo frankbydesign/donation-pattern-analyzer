@@ -1,61 +1,96 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
+import { getBaselinePeriodOptions } from '../utils/scenarioUtils';
 
 /**
- * ScenarioPanel - Scenario modeling panel with adjustable parameters
- * Allows users to model retention and recurring growth scenarios
+ * ScenarioPanel - Enhanced What-If Analysis with real data and clear explanations
+ * Allows users to model retention and recurring giving improvements with full context
  */
 const ScenarioPanel = ({
   onRun,
-  initialRetention = 45,
-  initialRecurringGrowth = 10,
+  onPeriodChange,
+  baseline = null,
+  selectedPeriod = 'last_year',
   isLoading = false,
   className = ''
 }) => {
-  const [retention, setRetention] = useState(initialRetention);
-  const [recurringGrowth, setRecurringGrowth] = useState(initialRecurringGrowth);
+  // Initialize sliders with current actual values from baseline
+  const currentRetention = baseline?.currentRetention || 45;
+  const currentRecurringPct = baseline?.currentRecurringPct || 10;
+
+  const [retention, setRetention] = useState(currentRetention);
+  const [recurringPct, setRecurringPct] = useState(currentRecurringPct);
   const [hasChanges, setHasChanges] = useState(false);
+  const [showMethodology, setShowMethodology] = useState(false);
+
+  // Update sliders when baseline changes
+  React.useEffect(() => {
+    if (baseline) {
+      setRetention(baseline.currentRetention);
+      setRecurringPct(baseline.currentRecurringPct);
+      setHasChanges(false);
+    }
+  }, [baseline]);
 
   const handleRetentionChange = useCallback((e) => {
     setRetention(Number(e.target.value));
     setHasChanges(true);
   }, []);
 
-  const handleRecurringGrowthChange = useCallback((e) => {
-    setRecurringGrowth(Number(e.target.value));
+  const handleRecurringPctChange = useCallback((e) => {
+    setRecurringPct(Number(e.target.value));
     setHasChanges(true);
   }, []);
 
   const handleRunScenario = useCallback(() => {
-    if (onRun) {
+    if (onRun && baseline) {
       onRun({
         retention,
-        recurringGrowth,
+        recurringPct,
         timestamp: new Date().toISOString()
       });
     }
     setHasChanges(false);
-  }, [onRun, retention, recurringGrowth]);
+  }, [onRun, retention, recurringPct, baseline]);
 
   const handleReset = useCallback(() => {
-    setRetention(initialRetention);
-    setRecurringGrowth(initialRecurringGrowth);
+    setRetention(currentRetention);
+    setRecurringPct(currentRecurringPct);
     setHasChanges(false);
-  }, [initialRetention, initialRecurringGrowth]);
+  }, [currentRetention, currentRecurringPct]);
 
-  // Calculate projected impact (simplified example)
-  const projectedRetentionImpact = ((retention - 45) / 45 * 100).toFixed(1);
-  const projectedRecurringImpact = ((recurringGrowth - 10) / 10 * 100).toFixed(1);
+  const periodOptions = useMemo(() => getBaselinePeriodOptions(), []);
+
+  // Calculate potential impact estimates
+  const retentionDelta = retention - currentRetention;
+  const recurringDelta = recurringPct - currentRecurringPct;
+
+  const estimatedRetainedDonors = baseline
+    ? Math.round((retentionDelta / 100) * baseline.lapsedDonorCount)
+    : 0;
+
+  const estimatedRecurringDonors = baseline
+    ? Math.round((recurringDelta / 100) * baseline.donorCount)
+    : 0;
+
+  if (!baseline) {
+    return (
+      <div className={`bg-white rounded-lg border border-slate-200 shadow-sm p-6 ${className}`}>
+        <p className="text-slate-500">Loading baseline data...</p>
+      </div>
+    );
+  }
 
   return (
     <div
-      className={`bg-white rounded-lg border border-slate-200 shadow-sm p-6 ${className}`}
+      className={`bg-white rounded-lg border border-slate-200 shadow-sm ${className}`}
       role="region"
       aria-labelledby="scenario-panel-title"
     >
-      <header className="mb-6">
+      {/* Header with Context */}
+      <header className="px-6 pt-6 pb-4 border-b border-slate-100">
         <h3
           id="scenario-panel-title"
-          className="text-lg font-semibold text-slate-900 flex items-center gap-2"
+          className="text-lg font-semibold text-slate-900 flex items-center gap-2 mb-2"
         >
           <svg
             className="w-5 h-5 text-indigo-600"
@@ -66,121 +101,187 @@ const ScenarioPanel = ({
           >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
           </svg>
-          Scenario Modeling
+          What-If Analysis
         </h3>
-        <p className="text-sm text-slate-500 mt-1">
-          Adjust parameters to project future outcomes
+        <p className="text-sm text-slate-600 leading-relaxed">
+          Model how improvements to donor retention and recurring giving could affect future revenue.
+          Adjust the sliders below to see projected impact based on your historical giving patterns.
         </p>
       </header>
 
-      <div className="space-y-6">
-        {/* Retention Rate Slider */}
-        <div className="space-y-2">
-          <div className="flex justify-between items-center">
-            <label
-              htmlFor="retention-slider"
-              className="text-sm font-medium text-slate-700"
-            >
-              Retention Rate
-            </label>
-            <output
-              htmlFor="retention-slider"
-              className="text-sm font-mono font-semibold text-indigo-600"
-            >
-              {retention}%
-            </output>
-          </div>
-
-          <input
-            id="retention-slider"
-            type="range"
-            min="20"
-            max="80"
-            step="1"
-            value={retention}
-            onChange={handleRetentionChange}
-            className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-            aria-valuemin={20}
-            aria-valuemax={80}
-            aria-valuenow={retention}
-            aria-valuetext={`${retention} percent`}
-          />
-
-          <div className="flex justify-between text-xs text-slate-400">
-            <span>20%</span>
-            <span className="text-emerald-600 font-medium">Benchmark: 45%</span>
-            <span>80%</span>
-          </div>
-
-          {retention !== 45 && (
-            <p className={`text-xs ${Number(projectedRetentionImpact) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-              {Number(projectedRetentionImpact) >= 0 ? '+' : ''}{projectedRetentionImpact}% vs benchmark
-            </p>
-          )}
+      <div className="p-6 space-y-6">
+        {/* Baseline Period Selector */}
+        <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
+          <label htmlFor="baseline-period" className="block text-sm font-medium text-slate-700 mb-2">
+            Baseline Period
+          </label>
+          <select
+            id="baseline-period"
+            value={selectedPeriod}
+            onChange={(e) => onPeriodChange && onPeriodChange(e.target.value)}
+            className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+          >
+            {periodOptions.map(option => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <p className="mt-2 text-xs text-slate-600">
+            <span className="font-medium">Baseline: {baseline.period} Revenue</span>
+            {' '}— ${baseline.totalRevenue.toLocaleString()} from {baseline.donorCount.toLocaleString()} contactable donors
+          </p>
         </div>
 
-        {/* Recurring Growth Slider */}
-        <div className="space-y-2">
-          <div className="flex justify-between items-center">
-            <label
-              htmlFor="recurring-growth-slider"
-              className="text-sm font-medium text-slate-700"
-            >
-              Recurring Donor Growth
-            </label>
-            <output
-              htmlFor="recurring-growth-slider"
-              className="text-sm font-mono font-semibold text-indigo-600"
-            >
-              {recurringGrowth}%
-            </output>
+        {/* Retention Scenario Card */}
+        <div className="bg-white border border-slate-200 rounded-lg p-5">
+          <div className="mb-4">
+            <div className="flex justify-between items-center mb-2">
+              <label htmlFor="retention-slider" className="text-sm font-semibold text-slate-900">
+                Retention Rate Scenario
+              </label>
+              <output
+                htmlFor="retention-slider"
+                className="text-base font-mono font-bold text-indigo-600"
+              >
+                {currentRetention.toFixed(1)}% → {retention}%
+              </output>
+            </div>
+
+            <input
+              id="retention-slider"
+              type="range"
+              min="20"
+              max="80"
+              step="0.5"
+              value={retention}
+              onChange={handleRetentionChange}
+              className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+              aria-valuemin={20}
+              aria-valuemax={80}
+              aria-valuenow={retention}
+              aria-valuetext={`${retention} percent retention`}
+            />
+
+            <div className="flex justify-between text-xs text-slate-400 mt-1">
+              <span>20%</span>
+              <span className="text-emerald-600 font-medium">Benchmark: 40-45%</span>
+              <span>80%</span>
+            </div>
           </div>
 
-          <input
-            id="recurring-growth-slider"
-            type="range"
-            min="-20"
-            max="50"
-            step="1"
-            value={recurringGrowth}
-            onChange={handleRecurringGrowthChange}
-            className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-            aria-valuemin={-20}
-            aria-valuemax={50}
-            aria-valuenow={recurringGrowth}
-            aria-valuetext={`${recurringGrowth} percent growth`}
-          />
-
-          <div className="flex justify-between text-xs text-slate-400">
-            <span>-20%</span>
-            <span className="text-emerald-600 font-medium">Current: 10%</span>
-            <span>+50%</span>
-          </div>
-
-          {recurringGrowth !== 10 && (
-            <p className={`text-xs ${Number(projectedRecurringImpact) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-              {Number(projectedRecurringImpact) >= 0 ? '+' : ''}{projectedRecurringImpact}% vs current rate
+          <div className="text-sm text-slate-600 space-y-1">
+            <p>
+              <span className="font-medium">Your current retention is {currentRetention.toFixed(1)}%.</span>
+              {' '}Sector benchmark is 40-45% (top performers: 60%+).
             </p>
-          )}
-        </div>
+            {baseline.lapsedDonorCount > 0 && (
+              <p className="text-xs">
+                Each 1% improvement could retain approximately{' '}
+                <span className="font-medium">{Math.round(baseline.lapsedDonorCount / 100)} donors</span>
+                {' '}from the {baseline.lapsedDonorCount} who lapsed.
+              </p>
+            )}
+          </div>
 
-        {/* Projected Impact Summary */}
-        <div className="bg-slate-50 rounded-lg p-4 border border-slate-100">
-          <h4 className="text-sm font-medium text-slate-700 mb-2">
-            Projected Impact
-          </h4>
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <p className="text-slate-500">Est. Revenue Impact</p>
-              <p className={`font-mono font-semibold ${retention >= 45 ? 'text-emerald-600' : 'text-red-600'}`}>
-                {retention >= 45 ? '+' : ''}{((retention - 45) * 0.5 + (recurringGrowth - 10) * 0.3).toFixed(1)}%
+          {retentionDelta !== 0 && (
+            <div className={`mt-3 p-3 rounded-lg ${retentionDelta > 0 ? 'bg-emerald-50 border border-emerald-200' : 'bg-orange-50 border border-orange-200'}`}>
+              <p className={`text-sm font-medium ${retentionDelta > 0 ? 'text-emerald-900' : 'text-orange-900'}`}>
+                {retentionDelta > 0 ? 'Improvement' : 'Reduction'}: {Math.abs(retentionDelta).toFixed(1)}%
+              </p>
+              <p className={`text-xs mt-1 ${retentionDelta > 0 ? 'text-emerald-700' : 'text-orange-700'}`}>
+                Could {retentionDelta > 0 ? 'retain' : 'lose'}{' '}
+                <span className="font-semibold">{Math.abs(estimatedRetainedDonors)} additional donors</span>
+                {' '}at avg gift of ${baseline.avgGift.toFixed(0)}
               </p>
             </div>
-            <div>
-              <p className="text-slate-500">Donor Base Change</p>
-              <p className={`font-mono font-semibold ${retention >= 45 ? 'text-emerald-600' : 'text-red-600'}`}>
-                {retention >= 45 ? '+' : ''}{((retention - 45) * 0.8).toFixed(1)}%
+          )}
+        </div>
+
+        {/* Recurring Giving Scenario Card */}
+        <div className="bg-white border border-slate-200 rounded-lg p-5">
+          <div className="mb-4">
+            <div className="flex justify-between items-center mb-2">
+              <label htmlFor="recurring-pct-slider" className="text-sm font-semibold text-slate-900">
+                Monthly Donors Scenario
+              </label>
+              <output
+                htmlFor="recurring-pct-slider"
+                className="text-base font-mono font-bold text-indigo-600"
+              >
+                {currentRecurringPct.toFixed(1)}% → {recurringPct}%
+              </output>
+            </div>
+
+            <input
+              id="recurring-pct-slider"
+              type="range"
+              min="0"
+              max="50"
+              step="0.5"
+              value={recurringPct}
+              onChange={handleRecurringPctChange}
+              className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+              aria-valuemin={0}
+              aria-valuemax={50}
+              aria-valuenow={recurringPct}
+              aria-valuetext={`${recurringPct} percent monthly donors`}
+            />
+
+            <div className="flex justify-between text-xs text-slate-400 mt-1">
+              <span>0%</span>
+              <span className="text-emerald-600 font-medium">Target: 20-30%</span>
+              <span>50%</span>
+            </div>
+          </div>
+
+          <div className="text-sm text-slate-600 space-y-1">
+            <p>
+              <span className="font-medium">Currently {currentRecurringPct.toFixed(1)}% of donors give monthly</span>
+              {' '}({baseline.monthlyDonorCount} of {baseline.donorCount} donors).
+            </p>
+            <p className="text-xs">
+              Each 1% increase converts approximately{' '}
+              <span className="font-medium">{Math.round(baseline.donorCount / 100)} donors</span>
+              {' '}to recurring giving.
+            </p>
+          </div>
+
+          {recurringDelta !== 0 && (
+            <div className={`mt-3 p-3 rounded-lg ${recurringDelta > 0 ? 'bg-blue-50 border border-blue-200' : 'bg-orange-50 border border-orange-200'}`}>
+              <p className={`text-sm font-medium ${recurringDelta > 0 ? 'text-blue-900' : 'text-orange-900'}`}>
+                {recurringDelta > 0 ? 'Increase' : 'Decrease'}: {Math.abs(recurringDelta).toFixed(1)}%
               </p>
+              <p className={`text-xs mt-1 ${recurringDelta > 0 ? 'text-blue-700' : 'text-orange-700'}`}>
+                Could convert{' '}
+                <span className="font-semibold">{Math.abs(estimatedRecurringDonors)} donors</span>
+                {' '}to monthly giving at avg of ${baseline.avgMonthlyGift.toFixed(0)}/month
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Key Assumptions Display */}
+        <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
+          <h4 className="text-xs font-semibold text-slate-700 uppercase tracking-wide mb-3">
+            Key Assumptions
+          </h4>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+            <div>
+              <p className="text-slate-500 text-xs">Average Gift</p>
+              <p className="font-mono font-semibold text-slate-900">${baseline.avgGift.toFixed(0)}</p>
+            </div>
+            <div>
+              <p className="text-slate-500 text-xs">Avg Monthly Gift</p>
+              <p className="font-mono font-semibold text-slate-900">${baseline.avgMonthlyGift.toFixed(0)}</p>
+            </div>
+            <div>
+              <p className="text-slate-500 text-xs">Lapsed Donors</p>
+              <p className="font-mono font-semibold text-slate-900">{baseline.lapsedDonorCount}</p>
+            </div>
+            <div>
+              <p className="text-slate-500 text-xs">Current Monthly Donors</p>
+              <p className="font-mono font-semibold text-slate-900">{baseline.monthlyDonorCount}</p>
             </div>
           </div>
         </div>
@@ -189,12 +290,12 @@ const ScenarioPanel = ({
         <div className="flex gap-3 pt-2">
           <button
             onClick={handleRunScenario}
-            disabled={isLoading}
+            disabled={isLoading || !baseline}
             className={`
-              flex-1 px-4 py-2.5 rounded-lg font-medium text-sm
+              flex-1 px-4 py-3 rounded-lg font-medium text-sm
               transition-all duration-200
               focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2
-              ${isLoading
+              ${isLoading || !baseline
                 ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
                 : hasChanges
                   ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm hover:shadow'
@@ -218,12 +319,47 @@ const ScenarioPanel = ({
 
           <button
             onClick={handleReset}
-            disabled={isLoading || (!hasChanges && retention === initialRetention && recurringGrowth === initialRecurringGrowth)}
-            className="px-4 py-2.5 rounded-lg font-medium text-sm border border-slate-300 text-slate-600 hover:bg-slate-50 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            aria-label="Reset to default values"
+            disabled={isLoading || (!hasChanges && retention === currentRetention && recurringPct === currentRecurringPct)}
+            className="px-5 py-3 rounded-lg font-medium text-sm border border-slate-300 text-slate-600 hover:bg-slate-50 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Reset to current values"
           >
-            Reset
+            Reset to Current
           </button>
+        </div>
+
+        {/* Methodology Section */}
+        <div className="border-t border-slate-200 pt-4">
+          <button
+            onClick={() => setShowMethodology(!showMethodology)}
+            className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 transition-colors"
+            aria-expanded={showMethodology}
+          >
+            <svg
+              className={`w-4 h-4 transition-transform ${showMethodology ? 'rotate-90' : ''}`}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+            How this is calculated
+          </button>
+
+          {showMethodology && (
+            <div className="mt-3 pl-6 text-xs text-slate-600 space-y-2 leading-relaxed">
+              <p>
+                <span className="font-medium">Retention Impact:</span> Assumes retained donors continue giving at their historical average gift amount.
+                The calculation estimates how many additional donors from those who lapsed would be retained based on the improvement in retention rate.
+              </p>
+              <p>
+                <span className="font-medium">Recurring Conversion:</span> Assumes converted donors give monthly (12x per year) at the average monthly gift amount observed in your data.
+                The calculation estimates how many additional donors would convert to monthly giving based on the percentage point increase.
+              </p>
+              <p className="text-slate-500 italic">
+                These are planning estimates based on historical patterns. Actual results depend on program implementation effectiveness, donor engagement strategies, and external factors.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>

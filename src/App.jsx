@@ -22,6 +22,9 @@ import {
 // Hooks
 import useDataLoader from './hooks/useDataLoader';
 
+// Utilities
+import { calculateBaselineMetrics, calculateScenarioImpact } from './utils/scenarioUtils';
+
 /**
  * Donation Pattern Analyzer - Main Application
  * Helps nonprofits understand donor behavior and make data-driven decisions
@@ -34,6 +37,7 @@ function App() {
   const [isA11yPanelOpen, setIsA11yPanelOpen] = useState(false);
   const [scenarioResults, setScenarioResults] = useState(null);
   const [activeTab, setActiveTab] = useState('executive');
+  const [baselinePeriod, setBaselinePeriod] = useState('last_year');
 
   // Calculate latest gift date from data
   const latestDataDate = React.useMemo(() => {
@@ -53,17 +57,33 @@ function App() {
     return latestDate;
   }, [data]);
 
+  // Calculate baseline metrics from actual data
+  const baselineMetrics = React.useMemo(() => {
+    if (!data?.layer1 || !data?.layer2) return null;
+    return calculateBaselineMetrics(data.layer1, data.layer2, baselinePeriod);
+  }, [data, baselinePeriod]);
+
   const handleRunScenario = (params) => {
-    // Calculate projected impact based on scenario parameters
-    const baseRevenue = 500000;
-    const retentionImpact = ((params.retention - 45) / 100) * baseRevenue * 0.6;
-    const recurringImpact = (params.recurringGrowth / 100) * baseRevenue * 0.3;
+    if (!baselineMetrics) return;
+
+    // Calculate projected impact using real baseline data
+    const results = calculateScenarioImpact(
+      baselineMetrics,
+      params.retention,
+      params.recurringPct
+    );
+
     setScenarioResults({
       ...params,
-      projectedRevenue: baseRevenue + retentionImpact + recurringImpact,
-      retentionImpact,
-      recurringImpact
+      ...results,
+      timestamp: params.timestamp
     });
+  };
+
+  const handlePeriodChange = (newPeriod) => {
+    setBaselinePeriod(newPeriod);
+    // Clear scenario results when period changes
+    setScenarioResults(null);
   };
 
   return (
@@ -184,56 +204,113 @@ function App() {
               {activeTab === 'scenarios' && (
                 <div className="space-y-6">
                   <section className="scenario-section">
-                    <h2 className="text-lg font-semibold text-slate-900 mb-4">
-                      What-If Analysis
-                    </h2>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                       <ScenarioPanel
                         onRun={handleRunScenario}
-                        initialRetention={52}
-                        initialRecurringGrowth={15}
+                        onPeriodChange={handlePeriodChange}
+                        baseline={baselineMetrics}
+                        selectedPeriod={baselinePeriod}
+                        isLoading={isLoading}
                       />
 
                       {scenarioResults ? (
-                        <div className="chart-container bg-white rounded-lg border border-slate-200 p-6">
-                          <h3 className="font-semibold text-slate-900 mb-4">Projected Impact</h3>
-                          <div className="space-y-4">
-                            <div className="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
-                              <span className="text-slate-600">Base Revenue</span>
-                              <span className="font-semibold text-slate-900">$500,000</span>
-                            </div>
-                            <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
-                              <span className="text-slate-600">
-                                <GlossaryTooltip termKey="retention">Retention</GlossaryTooltip> Impact
-                              </span>
-                              <span className={`font-semibold ${scenarioResults.retentionImpact >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                {scenarioResults.retentionImpact >= 0 ? '+' : ''}${Math.round(scenarioResults.retentionImpact).toLocaleString()}
-                              </span>
-                            </div>
-                            <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
-                              <span className="text-slate-600">
-                                <GlossaryTooltip termKey="recurringRate">Recurring</GlossaryTooltip> Impact
-                              </span>
-                              <span className={`font-semibold ${scenarioResults.recurringImpact >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
-                                {scenarioResults.recurringImpact >= 0 ? '+' : ''}${Math.round(scenarioResults.recurringImpact).toLocaleString()}
-                              </span>
-                            </div>
-                            <div className="flex justify-between items-center p-4 bg-indigo-100 rounded-lg border-2 border-indigo-200">
-                              <span className="font-medium text-indigo-900">Projected Revenue</span>
-                              <span className="text-xl font-bold text-indigo-600">
-                                ${Math.round(scenarioResults.projectedRevenue).toLocaleString()}
-                              </span>
-                            </div>
+                        <div className="chart-container bg-white rounded-lg border border-slate-200 shadow-sm">
+                          {/* Header */}
+                          <div className="px-6 pt-6 pb-4 border-b border-slate-100">
+                            <h3 className="text-lg font-semibold text-slate-900">Projected Impact</h3>
+                            <p className="text-xs text-slate-500 mt-1">
+                              Based on {baselineMetrics?.period} baseline
+                            </p>
                           </div>
-                          <p className="mt-4 text-xs text-slate-500">
-                            Run at {new Date(scenarioResults.timestamp).toLocaleTimeString()}
-                          </p>
+
+                          <div className="p-6 space-y-4">
+                            {/* Base Revenue */}
+                            <div className="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
+                              <span className="text-sm text-slate-600">Base Revenue</span>
+                              <span className="font-mono font-semibold text-slate-900">
+                                ${scenarioResults.baseRevenue.toLocaleString()}
+                              </span>
+                            </div>
+
+                            {/* Retention Impact with Explanation */}
+                            <div className="p-4 bg-emerald-50 rounded-lg border border-emerald-200">
+                              <div className="flex justify-between items-center mb-2">
+                                <span className="text-sm font-medium text-slate-700">
+                                  <GlossaryTooltip termKey="retention">Retention</GlossaryTooltip> Impact
+                                </span>
+                                <span className={`font-mono font-bold text-lg ${scenarioResults.retentionImpact >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                                  {scenarioResults.retentionImpact >= 0 ? '+' : ''}${scenarioResults.retentionImpact.toLocaleString()}
+                                </span>
+                              </div>
+                              {scenarioResults.details?.retention && (
+                                <p className="text-xs text-emerald-800 leading-relaxed">
+                                  Retaining <span className="font-semibold">{Math.abs(scenarioResults.details.retention.additionalDonors)} additional donors</span>
+                                  {' '}at their average gift of ${scenarioResults.details.retention.avgGift.toFixed(0)} would add this revenue.
+                                </p>
+                              )}
+                            </div>
+
+                            {/* Recurring Impact with Explanation */}
+                            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                              <div className="flex justify-between items-center mb-2">
+                                <span className="text-sm font-medium text-slate-700">
+                                  <GlossaryTooltip termKey="recurringRate">Recurring</GlossaryTooltip> Impact
+                                </span>
+                                <span className={`font-mono font-bold text-lg ${scenarioResults.recurringImpact >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+                                  {scenarioResults.recurringImpact >= 0 ? '+' : ''}${scenarioResults.recurringImpact.toLocaleString()}
+                                </span>
+                              </div>
+                              {scenarioResults.details?.recurring && (
+                                <p className="text-xs text-blue-800 leading-relaxed">
+                                  Converting <span className="font-semibold">{Math.abs(scenarioResults.details.recurring.additionalDonors)} donors</span>
+                                  {' '}to monthly giving at average of ${scenarioResults.details.recurring.avgMonthlyGift.toFixed(0)}/month adds this annually.
+                                </p>
+                              )}
+                            </div>
+
+                            {/* Projected Revenue - Prominent */}
+                            <div className="p-5 bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-lg border-2 border-indigo-300 shadow-sm">
+                              <div className="flex justify-between items-center mb-1">
+                                <span className="text-sm font-semibold text-indigo-900">Projected Revenue</span>
+                                <span className="text-2xl font-bold text-indigo-600">
+                                  ${scenarioResults.projectedRevenue.toLocaleString()}
+                                </span>
+                              </div>
+                              <p className="text-xs text-indigo-700 leading-relaxed">
+                                Your baseline plus projected improvements from the scenarios above.
+                              </p>
+                            </div>
+
+                            {/* Net Change Indicator */}
+                            {scenarioResults.baseRevenue && (
+                              <div className="pt-3 border-t border-slate-200">
+                                <div className="flex justify-between items-center text-sm">
+                                  <span className="text-slate-600">Total Projected Change</span>
+                                  <span className={`font-mono font-semibold ${(scenarioResults.projectedRevenue - scenarioResults.baseRevenue) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                                    {(scenarioResults.projectedRevenue - scenarioResults.baseRevenue) >= 0 ? '+' : ''}
+                                    ${(scenarioResults.projectedRevenue - scenarioResults.baseRevenue).toLocaleString()}
+                                    {' '}({(((scenarioResults.projectedRevenue - scenarioResults.baseRevenue) / scenarioResults.baseRevenue) * 100).toFixed(1)}%)
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+
+                            <p className="text-xs text-slate-500 text-center pt-2">
+                              Scenario run at {new Date(scenarioResults.timestamp).toLocaleTimeString()}
+                            </p>
+                          </div>
                         </div>
                       ) : (
-                        <div className="chart-container bg-white rounded-lg border border-slate-200 border-dashed p-6 flex items-center justify-center">
-                          <p className="text-slate-400 text-center">
-                            Adjust the sliders and click "Run Scenario" to see projected impact
-                          </p>
+                        <div className="chart-container bg-white rounded-lg border-2 border-dashed border-slate-300 p-8 flex items-center justify-center">
+                          <div className="text-center">
+                            <svg className="w-12 h-12 text-slate-300 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                            </svg>
+                            <p className="text-slate-500 font-medium mb-1">Ready to Model Scenarios</p>
+                            <p className="text-sm text-slate-400">
+                              Adjust the sliders and click "Run Scenario" to see projected impact
+                            </p>
+                          </div>
                         </div>
                       )}
                     </div>
