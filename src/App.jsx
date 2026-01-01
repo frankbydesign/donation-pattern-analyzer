@@ -18,6 +18,7 @@ import {
   GivingPatterns,
   TemporalTrends
 } from './components/sections';
+import { DateRangeFilter, FilterStatus } from './components/filters';
 
 // Hooks
 import useDataLoader from './hooks/useDataLoader';
@@ -103,7 +104,11 @@ function App() {
               </p>
             </div>
 
-            <div className="header-actions flex items-center gap-3">
+            <div className="header-actions flex items-center gap-4">
+              <DateRangeFilter />
+
+              <div className="h-6 w-px bg-slate-300"></div>
+
               <Tour autoStart={false} />
               <HighContrastToggle />
               <button
@@ -203,6 +208,7 @@ function App() {
 
               {activeTab === 'scenarios' && (
                 <div className="space-y-6">
+                  <FilterStatus mode="independent" />
                   <section className="scenario-section">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                       <ScenarioPanel

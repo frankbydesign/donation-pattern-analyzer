@@ -2,29 +2,45 @@ import React, { useMemo } from 'react';
 import useDataStore from '../../store/dataStore';
 import { ChartCard, BarChart, DoughnutChart } from '../charts';
 import { colors } from '../../config/chartDefaults';
+import { FilterStatus } from '../filters';
 
 /**
  * ExecutiveSummary - Dashboard section displaying key metrics and overview charts
  * Shows total donors, revenue, average gift size, segment distribution, and revenue trends
  */
 const ExecutiveSummary = () => {
-  const { layer1, layer2, isLoading } = useDataStore();
+  const { layer1, layer2, isLoading, getFilteredDonors, getAllDonors, filters } = useDataStore();
 
-  // Calculate key metrics
+  // Calculate metrics for both filtered and all-time data
   const metrics = useMemo(() => {
     if (!layer1 || !layer2) return null;
 
-    const totalDonors = layer2.executive_summary?.key_metrics?.total_donors || 0;
-    const totalRevenue = layer2.executive_summary?.key_metrics?.total_revenue || 0;
-    const avgGiftSize = layer2.executive_summary?.key_metrics?.avg_gift_size || 0;
+    const filteredDonors = getFilteredDonors();
+    const allDonors = getAllDonors();
+    const isFiltered = filters.dateRange !== null;
 
-    // Calculate anonymous donor statistics
-    const anonymousDonors = layer1.donors?.filter(donor => donor.is_anonymous === true) || [];
-    const anonymousRevenue = anonymousDonors.reduce((sum, donor) => sum + (donor.total_amount || 0), 0);
+    // Calculate filtered metrics
+    const totalDonors = filteredDonors.length;
+    const totalRevenue = filteredDonors.reduce((sum, donor) => {
+      return sum + (donor.gifts?.reduce((giftSum, gift) => giftSum + gift.amount, 0) || 0);
+    }, 0);
+    const totalGifts = filteredDonors.reduce((sum, donor) => sum + (donor.gifts?.length || 0), 0);
+    const avgGiftSize = totalGifts > 0 ? totalRevenue / totalGifts : 0;
+
+    // Calculate all-time metrics for comparison
+    const allTimeDonors = allDonors.length;
+    const allTimeRevenue = layer2.executive_summary?.key_metrics?.total_revenue || 0;
+    const allTimeAvgGift = layer2.executive_summary?.key_metrics?.avg_gift_size || 0;
+
+    // Calculate anonymous donor statistics (from filtered data)
+    const anonymousDonors = filteredDonors.filter(donor => donor.is_anonymous === true);
+    const anonymousRevenue = anonymousDonors.reduce((sum, donor) => {
+      return sum + (donor.gifts?.reduce((giftSum, gift) => giftSum + gift.amount, 0) || 0);
+    }, 0);
     const anonymousCount = anonymousDonors.length;
 
     // Calculate contactable donors (excluding anonymous)
-    const contactableDonors = layer1.donors?.filter(donor => donor.is_anonymous !== true) || [];
+    const contactableDonors = filteredDonors.filter(donor => donor.is_anonymous !== true);
     const contactableCount = contactableDonors.length;
 
     return {
@@ -34,17 +50,22 @@ const ExecutiveSummary = () => {
       anonymousRevenue,
       anonymousCount,
       contactableCount,
+      allTimeDonors,
+      allTimeRevenue,
+      allTimeAvgGift,
+      isFiltered
     };
-  }, [layer1, layer2]);
+  }, [layer1, layer2, getFilteredDonors, getAllDonors, filters]);
 
   // Generate actionable insights based on data
   const insights = useMemo(() => {
     if (!layer1 || !layer2 || !metrics) return [];
 
     const generatedInsights = [];
+    const filteredDonors = getFilteredDonors();
 
-    // Calculate retention rate (contactable donors only)
-    const contactableDonors = layer1.donors?.filter(donor => donor.is_anonymous !== true) || [];
+    // Calculate retention rate (contactable donors only) from filtered data
+    const contactableDonors = filteredDonors.filter(donor => donor.is_anonymous !== true);
     const oneYearAgo = new Date();
     oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
     const activeContactable = contactableDonors.filter(donor => {
@@ -55,9 +76,25 @@ const ExecutiveSummary = () => {
       ? (activeContactable / contactableDonors.length) * 100
       : 0;
 
-    // Calculate top 10 donor concentration
-    const sortedDonors = [...(layer1.donors || [])].sort((a, b) => (b.total_amount || 0) - (a.total_amount || 0));
-    const top10Revenue = sortedDonors.slice(0, 10).reduce((sum, donor) => sum + (donor.total_amount || 0), 0);
+    // Calculate all-time retention for comparison
+    const allContactable = getAllDonors().filter(donor => donor.is_anonymous !== true);
+    const allActiveContactable = allContactable.filter(donor => {
+      const lastGiftDate = donor.last_gift ? new Date(donor.last_gift) : null;
+      return lastGiftDate && lastGiftDate >= oneYearAgo;
+    }).length;
+    const allTimeRetention = allContactable.length > 0
+      ? (allActiveContactable / allContactable.length) * 100
+      : 0;
+
+    // Calculate top 10 donor concentration from filtered data
+    const sortedDonors = [...filteredDonors].sort((a, b) => {
+      const aTotal = a.gifts?.reduce((sum, gift) => sum + gift.amount, 0) || 0;
+      const bTotal = b.gifts?.reduce((sum, gift) => sum + gift.amount, 0) || 0;
+      return bTotal - aTotal;
+    });
+    const top10Revenue = sortedDonors.slice(0, 10).reduce((sum, donor) => {
+      return sum + (donor.gifts?.reduce((giftSum, gift) => giftSum + gift.amount, 0) || 0);
+    }, 0);
     const concentrationPct = metrics.totalRevenue > 0 ? (top10Revenue / metrics.totalRevenue) * 100 : 0;
 
     // Calculate lapse risk percentage (contactable donors only)
@@ -76,9 +113,9 @@ const ExecutiveSummary = () => {
     }
     const lapseRiskPct = contactableDonors.length > 0 ? (highRiskCount / contactableDonors.length) * 100 : 0;
 
-    // Calculate revenue by month/year
+    // Calculate revenue by month/year from filtered data
     const revenueByMonth = {};
-    layer1.donors?.forEach(donor => {
+    filteredDonors.forEach(donor => {
       donor.gifts?.forEach(gift => {
         const date = new Date(gift.date);
         const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
@@ -92,9 +129,9 @@ const ExecutiveSummary = () => {
       .reduce((sum, [, amount]) => sum + amount, 0);
     const decemberPct = metrics.totalRevenue > 0 ? (decemberRevenue / metrics.totalRevenue) * 100 : 0;
 
-    // Calculate YoY revenue growth
+    // Calculate YoY revenue growth from filtered data
     const revenueByYear = {};
-    layer1.donors?.forEach(donor => {
+    filteredDonors.forEach(donor => {
       donor.gifts?.forEach(gift => {
         const year = new Date(gift.date).getFullYear();
         revenueByYear[year] = (revenueByYear[year] || 0) + gift.amount;
@@ -110,9 +147,12 @@ const ExecutiveSummary = () => {
 
     // RED (Critical) Insights
     if (retentionRate < 40) {
+      const comparison = metrics.isFiltered && Math.abs(retentionRate - allTimeRetention) > 2
+        ? ` (vs. ${allTimeRetention.toFixed(1)}% all-time)`
+        : '';
       generatedInsights.push({
         severity: 'critical',
-        finding: `Retention rate (${retentionRate.toFixed(1)}%) is significantly below sector benchmark (40-45%).`,
+        finding: `Retention rate: ${retentionRate.toFixed(1)}%${comparison} is significantly below sector benchmark (40-45%).`,
         action: 'Consider focusing on repeat donation strategies such as thank-you calls within 48 hours of first gift, monthly giving program promotion, or personalized impact updates to recent donors.',
         priority: 1
       });
@@ -180,7 +220,7 @@ const ExecutiveSummary = () => {
     return generatedInsights
       .sort((a, b) => a.priority - b.priority)
       .slice(0, 5);
-  }, [layer1, layer2, metrics]);
+  }, [layer1, layer2, metrics, getFilteredDonors, getAllDonors]);
 
   // Prepare donor segment distribution data for doughnut chart
   const segmentChartData = useMemo(() => {
@@ -210,14 +250,15 @@ const ExecutiveSummary = () => {
     };
   }, [layer2]);
 
-  // Prepare revenue by year data for bar chart
+  // Prepare revenue by year data for bar chart (using filtered data)
   const revenueByYearData = useMemo(() => {
-    if (!layer1?.donors) return null;
+    const filteredDonors = getFilteredDonors();
+    if (!filteredDonors || filteredDonors.length === 0) return null;
 
-    // Aggregate gifts by year
+    // Aggregate gifts by year from filtered donors
     const yearlyRevenue = {};
 
-    layer1.donors.forEach(donor => {
+    filteredDonors.forEach(donor => {
       if (!donor.gifts) return;
 
       donor.gifts.forEach(gift => {
@@ -242,7 +283,7 @@ const ExecutiveSummary = () => {
         borderRadius: 4,
       }],
     };
-  }, [layer1]);
+  }, [getFilteredDonors]);
 
   if (isLoading) {
     return (
@@ -255,7 +296,7 @@ const ExecutiveSummary = () => {
     );
   }
 
-  if (!metrics || !segmentChartData || !revenueByYearData) {
+  if (!metrics || !segmentChartData) {
     return (
       <div className="bg-amber-50 border border-amber-200 rounded-lg p-6">
         <p className="text-amber-800">Unable to load executive summary data.</p>
@@ -263,8 +304,34 @@ const ExecutiveSummary = () => {
     );
   }
 
+  // Handle empty filter results
+  if (metrics.isFiltered && metrics.totalDonors === 0) {
+    return (
+      <div className="space-y-6">
+        <FilterStatus mode="filtered" />
+        <div className="bg-slate-50 border-2 border-dashed border-slate-300 rounded-lg p-12">
+          <div className="text-center">
+            <svg className="w-16 h-16 text-slate-300 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <h3 className="text-lg font-semibold text-slate-700 mb-2">No Donation Data in Selected Period</h3>
+            <p className="text-slate-600 mb-4">
+              No donors made gifts during the selected time range.
+            </p>
+            <p className="text-sm text-slate-500">
+              Try expanding the date range or resetting to "All Time" to view your donor data.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      {/* Filter Status */}
+      <FilterStatus mode="filtered" context={metrics.isFiltered ? `Showing ${metrics.totalDonors} of ${metrics.allTimeDonors} donors based on selected period` : null} />
+
       {/* Key Insights Section */}
       {insights.length > 0 && (
         <div className="bg-white rounded-lg border border-slate-200 p-6">
@@ -330,11 +397,16 @@ const ExecutiveSummary = () => {
         {/* Total Donors */}
         <div className="bg-white rounded-lg border border-slate-200 p-6">
           <div className="flex items-center justify-between">
-            <div>
+            <div className="flex-1">
               <p className="text-sm font-medium text-slate-600">Total Donors</p>
               <p className="text-3xl font-bold text-slate-900 mt-2">
                 {metrics.totalDonors.toLocaleString()}
               </p>
+              {metrics.isFiltered && metrics.allTimeDonors !== metrics.totalDonors && (
+                <p className="text-xs text-slate-500 mt-1">
+                  vs. {metrics.allTimeDonors.toLocaleString()} all-time
+                </p>
+              )}
             </div>
             <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
               <svg className="w-6 h-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -347,11 +419,16 @@ const ExecutiveSummary = () => {
         {/* Total Revenue */}
         <div className="bg-white rounded-lg border border-slate-200 p-6">
           <div className="flex items-center justify-between">
-            <div>
+            <div className="flex-1">
               <p className="text-sm font-medium text-slate-600">Total Revenue</p>
               <p className="text-3xl font-bold text-slate-900 mt-2">
                 ${metrics.totalRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
               </p>
+              {metrics.isFiltered && metrics.allTimeRevenue > 0 && (
+                <p className="text-xs text-slate-500 mt-1">
+                  {((metrics.totalRevenue / metrics.allTimeRevenue) * 100).toFixed(1)}% of all-time
+                </p>
+              )}
             </div>
             <div className="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center">
               <svg className="w-6 h-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -364,11 +441,16 @@ const ExecutiveSummary = () => {
         {/* Average Gift Size */}
         <div className="bg-white rounded-lg border border-slate-200 p-6">
           <div className="flex items-center justify-between">
-            <div>
+            <div className="flex-1">
               <p className="text-sm font-medium text-slate-600">Average Gift Size</p>
               <p className="text-3xl font-bold text-slate-900 mt-2">
                 ${metrics.avgGiftSize.toLocaleString(undefined, { maximumFractionDigits: 2 })}
               </p>
+              {metrics.isFiltered && metrics.allTimeAvgGift > 0 && Math.abs(metrics.avgGiftSize - metrics.allTimeAvgGift) > 1 && (
+                <p className="text-xs text-slate-500 mt-1">
+                  vs. ${metrics.allTimeAvgGift.toLocaleString(undefined, { maximumFractionDigits: 2 })} all-time
+                </p>
+              )}
             </div>
             <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
               <svg className="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -398,27 +480,33 @@ const ExecutiveSummary = () => {
           title="Revenue Trends"
           subtitle="Annual revenue over time"
         >
-          <BarChart
-            labels={revenueByYearData.labels}
-            datasets={revenueByYearData.datasets}
-            height={280}
-            options={{
-              scales: {
-                y: {
-                  ticks: {
-                    callback: function(value) {
-                      if (value >= 1000000) {
-                        return '$' + (value / 1000000).toFixed(1) + 'M';
-                      } else if (value >= 1000) {
-                        return '$' + (value / 1000).toFixed(0) + 'K';
+          {revenueByYearData ? (
+            <BarChart
+              labels={revenueByYearData.labels}
+              datasets={revenueByYearData.datasets}
+              height={280}
+              options={{
+                scales: {
+                  y: {
+                    ticks: {
+                      callback: function(value) {
+                        if (value >= 1000000) {
+                          return '$' + (value / 1000000).toFixed(1) + 'M';
+                        } else if (value >= 1000) {
+                          return '$' + (value / 1000).toFixed(0) + 'K';
+                        }
+                        return '$' + value;
                       }
-                      return '$' + value;
                     }
                   }
                 }
-              }
-            }}
-          />
+              }}
+            />
+          ) : (
+            <div className="flex items-center justify-center h-[280px] text-slate-400">
+              <p>No revenue data available</p>
+            </div>
+          )}
         </ChartCard>
       </div>
     </div>

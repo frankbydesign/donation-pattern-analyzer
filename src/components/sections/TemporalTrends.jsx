@@ -2,13 +2,15 @@ import React, { useMemo } from 'react';
 import useDataStore from '../../store/dataStore';
 import { ChartCard, LineChart, BarChart } from '../charts';
 import { colors } from '../../config/chartDefaults';
+import { FilterStatus } from '../filters';
 
 /**
  * TemporalTrends - Dashboard section displaying temporal donor behavior trends
  * Shows year-over-year donor counts, new vs returning donors, and cohort retention analysis
+ * HIGHLIGHTED mode: Shows ALL data but visually highlights the selected period
  */
 const TemporalTrends = () => {
-  const { layer1, layer2, isLoading } = useDataStore();
+  const { layer1, layer2, isLoading, getDateRangeBounds } = useDataStore();
 
   // Calculate year-over-year donor counts
   const yoyDonorCountsData = useMemo(() => {
@@ -217,6 +219,9 @@ const TemporalTrends = () => {
 
   return (
     <div className="space-y-6">
+      {/* Filter Status - Highlighted Mode */}
+      <FilterStatus mode="highlighted" />
+
       {/* Key Metrics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Best Acquisition Year */}

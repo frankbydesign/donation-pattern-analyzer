@@ -2,32 +2,30 @@ import React, { useMemo } from 'react';
 import useDataStore from '../../store/dataStore';
 import { ChartCard, BarChart } from '../charts';
 import { colors } from '../../config/chartDefaults';
+import { FilterStatus } from '../filters';
 
 /**
  * GivingPatterns - Dashboard section displaying giving behavior patterns
  * Shows monthly trends, day of week patterns, and gift amount distribution
  */
 const GivingPatterns = () => {
-  const { layer1, isLoading } = useDataStore();
+  const { isLoading, getFilteredGifts, getAllGifts, filters } = useDataStore();
 
-  // Calculate monthly giving patterns
+  // Calculate monthly giving patterns from filtered gifts
   const monthlyPatternsData = useMemo(() => {
-    if (!layer1?.donors) return null;
+    const gifts = getFilteredGifts();
+    if (!gifts || gifts.length === 0) return null;
 
     // Initialize counts for all 12 months
     const monthCounts = Array(12).fill(0);
     const monthlyRevenue = Array(12).fill(0);
 
-    // Aggregate all gifts by month
-    layer1.donors.forEach(donor => {
-      if (!donor.gifts) return;
-
-      donor.gifts.forEach(gift => {
-        const date = new Date(gift.date);
-        const month = date.getMonth(); // 0-11
-        monthCounts[month]++;
-        monthlyRevenue[month] += gift.amount;
-      });
+    // Aggregate filtered gifts by month
+    gifts.forEach(gift => {
+      const date = new Date(gift.date);
+      const month = date.getMonth(); // 0-11
+      monthCounts[month]++;
+      monthlyRevenue[month] += gift.amount;
     });
 
     const monthNames = [
@@ -46,24 +44,21 @@ const GivingPatterns = () => {
       rawData: monthCounts,
       monthlyRevenue,
     };
-  }, [layer1]);
+  }, [getFilteredGifts]);
 
-  // Calculate day of week patterns
+  // Calculate day of week patterns from filtered gifts
   const dayOfWeekData = useMemo(() => {
-    if (!layer1?.donors) return null;
+    const gifts = getFilteredGifts();
+    if (!gifts || gifts.length === 0) return null;
 
     // Initialize counts for all 7 days
     const dayCounts = Array(7).fill(0);
 
-    // Aggregate all gifts by day of week
-    layer1.donors.forEach(donor => {
-      if (!donor.gifts) return;
-
-      donor.gifts.forEach(gift => {
-        const date = new Date(gift.date);
-        const day = date.getDay(); // 0-6 (Sunday-Saturday)
-        dayCounts[day]++;
-      });
+    // Aggregate filtered gifts by day of week
+    gifts.forEach(gift => {
+      const date = new Date(gift.date);
+      const day = date.getDay(); // 0-6 (Sunday-Saturday)
+      dayCounts[day]++;
     });
 
     const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -82,11 +77,12 @@ const GivingPatterns = () => {
       }],
       rawData: dayCounts,
     };
-  }, [layer1]);
+  }, [getFilteredGifts]);
 
-  // Calculate gift amount distribution
+  // Calculate gift amount distribution from filtered gifts
   const amountDistributionData = useMemo(() => {
-    if (!layer1?.donors) return null;
+    const gifts = getFilteredGifts();
+    if (!gifts || gifts.length === 0) return null;
 
     // Define amount ranges
     const ranges = [
@@ -100,19 +96,15 @@ const GivingPatterns = () => {
 
     const rangeCounts = ranges.map(() => 0);
 
-    // Count gifts in each range
-    layer1.donors.forEach(donor => {
-      if (!donor.gifts) return;
-
-      donor.gifts.forEach(gift => {
-        const amount = gift.amount;
-        const rangeIndex = ranges.findIndex(
-          range => amount >= range.min && amount <= range.max
-        );
-        if (rangeIndex !== -1) {
-          rangeCounts[rangeIndex]++;
-        }
-      });
+    // Count filtered gifts in each range
+    gifts.forEach(gift => {
+      const amount = gift.amount;
+      const rangeIndex = ranges.findIndex(
+        range => amount >= range.min && amount <= range.max
+      );
+      if (rangeIndex !== -1) {
+        rangeCounts[rangeIndex]++;
+      }
     });
 
     return {
@@ -126,7 +118,7 @@ const GivingPatterns = () => {
       rawData: rangeCounts,
       ranges,
     };
-  }, [layer1]);
+  }, [getFilteredGifts]);
 
   // Calculate key metrics
   const metrics = useMemo(() => {
@@ -173,14 +165,43 @@ const GivingPatterns = () => {
 
   if (!monthlyPatternsData || !amountDistributionData || !metrics) {
     return (
-      <div className="bg-amber-50 border border-amber-200 rounded-lg p-6">
-        <p className="text-amber-800">Unable to load giving patterns data.</p>
+      <div className="space-y-6">
+        <FilterStatus mode="filtered" />
+        <div className="bg-slate-50 border-2 border-dashed border-slate-300 rounded-lg p-12">
+          <div className="text-center">
+            <svg className="w-16 h-16 text-slate-300 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
+            </svg>
+            <h3 className="text-lg font-semibold text-slate-700 mb-2">No Gift Data in Selected Period</h3>
+            <p className="text-slate-600 mb-4">
+              No gifts were made during the selected time range.
+            </p>
+            <p className="text-sm text-slate-500">
+              Try expanding the date range or resetting to "All Time" to view giving patterns.
+            </p>
+          </div>
+        </div>
       </div>
     );
   }
 
+  // Calculate total gifts for context
+  const isFiltered = filters.dateRange !== null;
+  const allGifts = getAllGifts();
+  const totalFilteredGifts = metrics.totalGifts;
+  const totalAllTimeGifts = allGifts.length;
+
   return (
     <div className="space-y-6">
+      {/* Filter Status */}
+      <FilterStatus
+        mode="filtered"
+        context={isFiltered
+          ? `Based on ${totalFilteredGifts.toLocaleString()} gifts in selected period (vs. ${totalAllTimeGifts.toLocaleString()} all-time)`
+          : null
+        }
+      />
+
       {/* Key Metrics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Total Gifts */}
