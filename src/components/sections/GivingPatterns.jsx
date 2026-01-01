@@ -314,9 +314,27 @@ const GivingPatterns = () => {
         </ChartCard>
       </div>
 
-      {/* Day of Week Chart - Only show if data exists */}
-      {dayOfWeekData && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Bottom Row: Understanding Giving Patterns + Day of Week Chart */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        {/* Understanding Giving Patterns - Left Column */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+          <div className="flex items-start gap-3">
+            <svg className="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div>
+              <h4 className="font-semibold text-blue-900 mb-1">Understanding Giving Patterns</h4>
+              <p className="text-sm text-blue-800 leading-relaxed">
+                {metrics.peakMonth} is your peak giving month, accounting for {metrics.peakMonthPercentage}% of all gifts.
+                Most donors give in the {metrics.mostCommonRange} range. Use these insights to time fundraising campaigns
+                and set realistic gift amount targets for different donor segments.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Day of Week Patterns - Right Column */}
+        {dayOfWeekData && (
           <ChartCard
             title="Day of Week Patterns"
             subtitle="Distribution of gifts by day of the week"
@@ -338,26 +356,7 @@ const GivingPatterns = () => {
               }}
             />
           </ChartCard>
-        </div>
-      )}
-
-      {/* Insights */}
-      <div className="max-w-3xl">
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-          <div className="flex items-start gap-3">
-            <svg className="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <div>
-              <h4 className="font-semibold text-blue-900 mb-1">Understanding Giving Patterns</h4>
-              <p className="text-sm text-blue-800 leading-relaxed">
-                {metrics.peakMonth} is your peak giving month, accounting for {metrics.peakMonthPercentage}% of all gifts.
-                Most donors give in the {metrics.mostCommonRange} range. Use these insights to time fundraising campaigns
-                and set realistic gift amount targets for different donor segments.
-              </p>
-            </div>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
