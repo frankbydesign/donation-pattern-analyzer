@@ -307,7 +307,7 @@ const ExecutiveSummary = () => {
         })
         .length;
     }
-    const lapseRiskPct = contactableDonors.length > 0 ? (highRiskCount / contactableDonors.length) * 100 : 0;
+    const lapseRiskPct = metrics.contactableCount > 0 ? (highRiskCount / metrics.contactableCount) * 100 : 0;
 
     // Calculate revenue by month/year from filtered data
     const revenueByMonth = {};
