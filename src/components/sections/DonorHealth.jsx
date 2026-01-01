@@ -64,11 +64,12 @@ const DonorHealth = () => {
         segments['Champions (555)']++;
       } else if (total >= 12) {
         segments['Loyal (4-5 range)']++;
-      } else if (total >= 9) {
+      } else if (total >= 10) {
         segments['Potential (3-4 range)']++;
-      } else if (total >= 6) {
+      } else if (total >= 8) {
         segments['At Risk (2-3 range)']++;
       } else {
+        // Scores 6-7 (and theoretically lower, but dataset min is 6)
         segments['Lost (1-2 range)']++;
       }
     });
@@ -353,6 +354,20 @@ const DonorHealth = () => {
 
   return (
     <div className="space-y-6">
+      {/* Time Filter Notice */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="flex items-start gap-3">
+          <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div>
+            <p className="text-sm text-blue-800 leading-relaxed">
+              <strong>Note:</strong> Donor health metrics reflect all-time patterns and are not affected by the time period filter. These analyses require complete donor history to be meaningful.
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Filter Status */}
       <FilterStatus
         mode="filtered"
@@ -434,6 +449,11 @@ const DonorHealth = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* RFM Segment Distribution */}
         <div className="space-y-4">
+          <div className="bg-slate-50 border border-slate-200 rounded px-3 py-2">
+            <p className="text-xs text-slate-600">
+              <strong>Based on all-time donor history</strong>
+            </p>
+          </div>
           <ChartCard
             title="RFM Segment Distribution"
             subtitle="Donors grouped by Recency, Frequency, and Monetary scores"
@@ -498,6 +518,11 @@ const DonorHealth = () => {
 
         {/* Lapse Risk Breakdown */}
         <div className="space-y-4">
+          <div className="bg-slate-50 border border-slate-200 rounded px-3 py-2">
+            <p className="text-xs text-slate-600">
+              <strong>Based on all-time donor history</strong>
+            </p>
+          </div>
           <ChartCard
             title="Lapse Risk Analysis"
             subtitle="Distribution of donors by lapse risk level"
