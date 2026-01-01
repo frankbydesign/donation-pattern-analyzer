@@ -22,6 +22,15 @@ const useDataStore = create((set, get) => ({
     status: null       // e.g., 'active', 'lapsing', 'lapsed'
   },
 
+  // Drill-down panel state
+  drillDownPanel: {
+    isOpen: false,
+    type: null,        // 'segment' | 'lapseRisk' | 'cohort' | 'topDonors' | 'newDonors' | 'returningDonors' | 'cohortRetention'
+    filter: null,      // the specific filter value (e.g., 'Champions', 'high', 2023)
+    title: null,       // display title for the panel
+    donors: []         // pre-filtered array of donors
+  },
+
   /**
    * Load all three layers of donor data from JSON files
    * @returns {Promise<void>}
@@ -249,6 +258,219 @@ const useDataStore = create((set, get) => ({
       start: new Date(start),
       end: new Date(end)
     };
+  },
+
+  /**
+   * Open drill-down panel with filtered donors
+   * @param {Object} params - Panel configuration { type, filter, title, donors }
+   */
+  openDrillDownPanel: ({ type, filter, title, donors }) => {
+    set({
+      drillDownPanel: {
+        isOpen: true,
+        type,
+        filter,
+        title,
+        donors
+      }
+    });
+  },
+
+  /**
+   * Close drill-down panel
+   */
+  closeDrillDownPanel: () => {
+    set({
+      drillDownPanel: {
+        isOpen: false,
+        type: null,
+        filter: null,
+        title: null,
+        donors: []
+      }
+    });
+  },
+
+  /**
+   * Get donors by RFM segment
+   * @param {string} segmentName - RFM segment name (e.g., 'Champions (555)', 'At Risk (2-3 range)')
+   * @returns {Array} Filtered array of donor objects with RFM scores
+   */
+  getDonorsBySegment: (segmentName) => {
+    const { layer1, layer2, getFilteredDonors } = get();
+
+    if (!layer1?.donors || !layer2?.rfm_analysis?.scores) {
+      return [];
+    }
+
+    const filteredDonors = getFilteredDonors();
+    const contactableDonors = filteredDonors.filter(donor => donor.is_anonymous !== true);
+
+    // Map RFM scores to donors
+    const donorsWithScores = contactableDonors.map(donor => {
+      const rfmScore = layer2.rfm_analysis.scores[donor.donor_id];
+      return {
+        ...donor,
+        rfm_score: rfmScore
+      };
+    }).filter(donor => donor.rfm_score);
+
+    // Filter by segment
+    return donorsWithScores.filter(donor => {
+      const total = donor.rfm_score.rfm_total || 0;
+
+      if (segmentName.includes('Champions')) {
+        return total === 15;
+      } else if (segmentName.includes('Loyal')) {
+        return total >= 12 && total < 15;
+      } else if (segmentName.includes('Potential')) {
+        return total >= 9 && total < 12;
+      } else if (segmentName.includes('At Risk')) {
+        return total >= 6 && total < 9;
+      } else if (segmentName.includes('Lost')) {
+        return total < 6;
+      }
+
+      return false;
+    });
+  },
+
+  /**
+   * Get donors by lapse risk level
+   * @param {string} riskLevel - 'low', 'medium', or 'high'
+   * @returns {Array} Filtered array of donor objects with risk data
+   */
+  getDonorsByLapseRisk: (riskLevel) => {
+    const { layer1, layer2, getFilteredDonors } = get();
+
+    if (!layer1?.donors || !layer2?.lapse_risk_analysis?.individual_risks) {
+      return [];
+    }
+
+    const filteredDonors = getFilteredDonors();
+    const contactableDonors = filteredDonors.filter(donor => donor.is_anonymous !== true);
+
+    // Map risk data to donors
+    return contactableDonors.map(donor => {
+      const riskData = layer2.lapse_risk_analysis.individual_risks[donor.donor_id];
+      return {
+        ...donor,
+        risk_data: riskData
+      };
+    }).filter(donor => {
+      return donor.risk_data?.risk_level?.toLowerCase() === riskLevel.toLowerCase();
+    });
+  },
+
+  /**
+   * Get donors by cohort year (year of first gift)
+   * @param {number|string} year - Cohort year
+   * @returns {Array} Filtered array of donor objects
+   */
+  getDonorsByCohort: (year) => {
+    const { getAllDonors } = get();
+    const allDonors = getAllDonors();
+
+    return allDonors.filter(donor => {
+      if (!donor.first_gift) return false;
+      const firstGiftYear = new Date(donor.first_gift).getFullYear();
+      return firstGiftYear === parseInt(year);
+    });
+  },
+
+  /**
+   * Get donors retained in a specific year from a cohort
+   * @param {number|string} cohortYear - Year donors were acquired
+   * @param {number|string} retentionYear - Year to check retention
+   * @returns {Array} Filtered array of donor objects
+   */
+  getDonorsRetainedInYear: (cohortYear, retentionYear) => {
+    const { getAllDonors } = get();
+    const allDonors = getAllDonors();
+
+    return allDonors.filter(donor => {
+      if (!donor.first_gift || !donor.gifts) return false;
+
+      // Check if donor is from the specified cohort
+      const firstGiftYear = new Date(donor.first_gift).getFullYear();
+      if (firstGiftYear !== parseInt(cohortYear)) return false;
+
+      // Check if donor gave in the retention year
+      const gaveInRetentionYear = donor.gifts.some(gift => {
+        const giftYear = new Date(gift.date).getFullYear();
+        return giftYear === parseInt(retentionYear);
+      });
+
+      return gaveInRetentionYear;
+    });
+  },
+
+  /**
+   * Get top N donors by total giving amount
+   * @param {number} n - Number of top donors to return
+   * @returns {Array} Filtered array of donor objects sorted by total giving
+   */
+  getTopDonorsByValue: (n = 10) => {
+    const { getFilteredDonors } = get();
+    const filteredDonors = getFilteredDonors();
+
+    // Calculate total giving for each donor
+    const donorsWithTotals = filteredDonors.map(donor => {
+      const totalGiving = donor.gifts?.reduce((sum, gift) => sum + gift.amount, 0) || 0;
+      return {
+        ...donor,
+        total_giving: totalGiving
+      };
+    });
+
+    // Sort by total giving (descending) and return top N
+    return donorsWithTotals
+      .sort((a, b) => b.total_giving - a.total_giving)
+      .slice(0, n);
+  },
+
+  /**
+   * Get new donors for a specific year
+   * @param {number|string} year - Year to get new donors for
+   * @returns {Array} Filtered array of donor objects
+   */
+  getNewDonorsByYear: (year) => {
+    const { getAllDonors } = get();
+    const allDonors = getAllDonors();
+
+    return allDonors.filter(donor => {
+      if (!donor.first_gift) return false;
+      const firstGiftYear = new Date(donor.first_gift).getFullYear();
+      return firstGiftYear === parseInt(year);
+    });
+  },
+
+  /**
+   * Get returning donors for a specific year
+   * @param {number|string} year - Year to get returning donors for
+   * @returns {Array} Filtered array of donor objects
+   */
+  getReturningDonorsByYear: (year) => {
+    const { getAllDonors } = get();
+    const allDonors = getAllDonors();
+
+    return allDonors.filter(donor => {
+      if (!donor.first_gift || !donor.gifts) return false;
+
+      const firstGiftYear = new Date(donor.first_gift).getFullYear();
+      const targetYear = parseInt(year);
+
+      // Must have first gift before the target year
+      if (firstGiftYear >= targetYear) return false;
+
+      // Must have given in the target year
+      const gaveInTargetYear = donor.gifts.some(gift => {
+        const giftYear = new Date(gift.date).getFullYear();
+        return giftYear === targetYear;
+      });
+
+      return gaveInTargetYear;
+    });
   }
 }));
 

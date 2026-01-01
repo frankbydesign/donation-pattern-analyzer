@@ -10,7 +10,17 @@ import { FilterStatus } from '../filters';
  * HIGHLIGHTED mode: Shows ALL data but visually highlights the selected period
  */
 const TemporalTrends = () => {
-  const { layer1, layer2, isLoading, getDateRangeBounds } = useDataStore();
+  const {
+    layer1,
+    layer2,
+    isLoading,
+    getDateRangeBounds,
+    openDrillDownPanel,
+    getDonorsByCohort,
+    getDonorsRetainedInYear,
+    getNewDonorsByYear,
+    getReturningDonorsByYear
+  } = useDataStore();
 
   // Calculate year-over-year donor counts
   const yoyDonorCountsData = useMemo(() => {
@@ -198,6 +208,51 @@ const TemporalTrends = () => {
     };
   }, [newVsReturningData, cohortRetentionData]);
 
+  // Handle cohort year click
+  const handleCohortClick = (cohortYear) => {
+    const donors = getDonorsByCohort(cohortYear);
+    openDrillDownPanel({
+      type: 'cohort',
+      filter: cohortYear,
+      title: `${cohortYear} Cohort Donors`,
+      donors
+    });
+  };
+
+  // Handle cohort retention cell click
+  const handleRetentionCellClick = (cohortYear, yearNum) => {
+    const retentionYear = parseInt(cohortYear) + yearNum;
+    const donors = getDonorsRetainedInYear(cohortYear, retentionYear);
+    openDrillDownPanel({
+      type: 'cohortRetention',
+      filter: `${cohortYear}-year${yearNum}`,
+      title: `${cohortYear} Cohort - Retained in ${retentionYear}`,
+      donors
+    });
+  };
+
+  // Handle new donors click from chart
+  const handleNewDonorsClick = (year) => {
+    const donors = getNewDonorsByYear(year);
+    openDrillDownPanel({
+      type: 'newDonors',
+      filter: year,
+      title: `New Donors in ${year}`,
+      donors
+    });
+  };
+
+  // Handle returning donors click from chart
+  const handleReturningDonorsClick = (year) => {
+    const donors = getReturningDonorsByYear(year);
+    openDrillDownPanel({
+      type: 'returningDonors',
+      filter: year,
+      title: `Returning Donors in ${year}`,
+      donors
+    });
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -315,26 +370,50 @@ const TemporalTrends = () => {
           title="New vs Returning Donors"
           subtitle="First-time vs repeat donors by year"
         >
-          <BarChart
-            labels={newVsReturningData.labels}
-            datasets={newVsReturningData.datasets}
-            height={300}
-            options={{
-              scales: {
-                y: {
-                  stacked: true,
-                  ticks: {
-                    callback: function(value) {
-                      return value.toLocaleString();
+          <div className="relative group">
+            <BarChart
+              labels={newVsReturningData.labels}
+              datasets={newVsReturningData.datasets}
+              height={300}
+              options={{
+                scales: {
+                  y: {
+                    stacked: true,
+                    ticks: {
+                      callback: function(value) {
+                        return value.toLocaleString();
+                      }
+                    }
+                  },
+                  x: {
+                    stacked: true,
+                  }
+                },
+                onClick: (event, elements) => {
+                  if (elements.length > 0) {
+                    const datasetIndex = elements[0].datasetIndex;
+                    const index = elements[0].index;
+                    const year = newVsReturningData.labels[index];
+
+                    // Dataset 0 is Returning, Dataset 1 is New
+                    if (datasetIndex === 1) {
+                      handleNewDonorsClick(year);
+                    } else if (datasetIndex === 0) {
+                      handleReturningDonorsClick(year);
                     }
                   }
                 },
-                x: {
-                  stacked: true,
+                onHover: (event, elements) => {
+                  event.native.target.style.cursor = elements.length > 0 ? 'pointer' : 'default';
                 }
-              }
-            }}
-          />
+              }}
+            />
+            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="bg-indigo-600 text-white text-xs px-2 py-1 rounded shadow-lg">
+                Click segments to view donors
+              </div>
+            </div>
+          </div>
         </ChartCard>
       </div>
 
@@ -377,7 +456,10 @@ const TemporalTrends = () => {
             <tbody className="bg-white divide-y divide-slate-200">
               {cohortRetentionData.cohorts.map((cohort, index) => (
                 <tr key={cohort.cohortYear} className={index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
-                  <td className="px-4 py-3 text-sm font-medium text-slate-900">
+                  <td
+                    className="px-4 py-3 text-sm font-medium text-indigo-600 hover:text-indigo-800 cursor-pointer underline"
+                    onClick={() => handleCohortClick(cohort.cohortYear)}
+                  >
                     {cohort.cohortYear}
                   </td>
                   <td className="px-4 py-3 text-sm text-slate-600">
@@ -388,14 +470,17 @@ const TemporalTrends = () => {
                     return (
                       <td key={yearNum} className="px-4 py-3 text-sm">
                         {rate !== undefined ? (
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            rate >= 30 ? 'bg-emerald-100 text-emerald-800' :
-                            rate >= 20 ? 'bg-blue-100 text-blue-800' :
-                            rate >= 10 ? 'bg-amber-100 text-amber-800' :
-                            'bg-red-100 text-red-800'
-                          }`}>
+                          <button
+                            onClick={() => handleRetentionCellClick(cohort.cohortYear, yearNum)}
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer hover:ring-2 hover:ring-indigo-400 transition-all ${
+                              rate >= 30 ? 'bg-emerald-100 text-emerald-800' :
+                              rate >= 20 ? 'bg-blue-100 text-blue-800' :
+                              rate >= 10 ? 'bg-amber-100 text-amber-800' :
+                              'bg-red-100 text-red-800'
+                            }`}
+                          >
                             {rate.toFixed(1)}%
-                          </span>
+                          </button>
                         ) : (
                           <span className="text-slate-400">—</span>
                         )}
@@ -408,22 +493,27 @@ const TemporalTrends = () => {
           </table>
         </div>
 
-        <div className="mt-4 flex items-center gap-4 text-xs">
-          <div className="flex items-center gap-2">
-            <span className="inline-block w-3 h-3 rounded-full bg-emerald-500"></span>
-            <span className="text-slate-600">≥30% retention</span>
+        <div className="mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-4 text-xs">
+            <div className="flex items-center gap-2">
+              <span className="inline-block w-3 h-3 rounded-full bg-emerald-500"></span>
+              <span className="text-slate-600">≥30% retention</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="inline-block w-3 h-3 rounded-full bg-blue-500"></span>
+              <span className="text-slate-600">20-29%</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="inline-block w-3 h-3 rounded-full bg-amber-500"></span>
+              <span className="text-slate-600">10-19%</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="inline-block w-3 h-3 rounded-full bg-red-500"></span>
+              <span className="text-slate-600">&lt;10%</span>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="inline-block w-3 h-3 rounded-full bg-blue-500"></span>
-            <span className="text-slate-600">20-29%</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="inline-block w-3 h-3 rounded-full bg-amber-500"></span>
-            <span className="text-slate-600">10-19%</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="inline-block w-3 h-3 rounded-full bg-red-500"></span>
-            <span className="text-slate-600">&lt;10%</span>
+          <div className="text-xs text-slate-500 italic">
+            Click cohort years or retention percentages to view donor details
           </div>
         </div>
       </div>

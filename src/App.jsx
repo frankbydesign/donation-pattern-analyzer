@@ -19,6 +19,7 @@ import {
   TemporalTrends
 } from './components/sections';
 import { DateRangeFilter, FilterStatus } from './components/filters';
+import { DonorListPanel } from './components/panels';
 
 // Hooks
 import useDataLoader from './hooks/useDataLoader';
@@ -330,6 +331,7 @@ function App() {
         {/* Modals */}
         <Glossary isOpen={isGlossaryOpen} onClose={() => setIsGlossaryOpen(false)} />
         <AccessibilityPanel isOpen={isA11yPanelOpen} onClose={() => setIsA11yPanelOpen(false)} />
+        <DonorListPanel />
 
         {/* Footer */}
         <footer className="bg-white border-t border-slate-200 mt-12 px-6 py-4">
