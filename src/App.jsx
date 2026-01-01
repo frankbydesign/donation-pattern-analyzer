@@ -12,6 +12,8 @@ import AccessibilityPanel, {
   SkipLink,
   HighContrastToggle
 } from './components/Accessibility';
+import ExecutiveSummary from './components/sections/ExecutiveSummary';
+import DonorHealth from './components/sections/DonorHealth';
 
 // Hooks
 import useDataLoader from './hooks/useDataLoader';
@@ -27,7 +29,7 @@ function App() {
   const [isGlossaryOpen, setIsGlossaryOpen] = useState(false);
   const [isA11yPanelOpen, setIsA11yPanelOpen] = useState(false);
   const [scenarioResults, setScenarioResults] = useState(null);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('executive');
 
   const handleRunScenario = (params) => {
     console.log('Running scenario with:', params);
@@ -86,9 +88,9 @@ function App() {
         {/* Navigation Tabs */}
         <nav className="bg-white border-b border-slate-200 px-6" aria-label="Dashboard navigation">
           <div className="max-w-7xl mx-auto">
-            <div className="flex gap-1">
+            <div className="flex gap-1" role="tablist">
               {[
-                { id: 'overview', label: 'Executive Summary' },
+                { id: 'executive', label: 'Executive Summary' },
                 { id: 'health', label: 'Donor Health' },
                 { id: 'patterns', label: 'Giving Patterns' },
                 { id: 'scenarios', label: 'What-If Analysis' }
@@ -148,123 +150,80 @@ function App() {
           {/* Main Content - Only show when data is loaded */}
           {!isLoading && !error && data && (
             <>
-          {/* Welcome Message */}
-          <section className="mb-8">
-            <InsightSummary
-              title="Welcome to Donor Analytics"
-              summary="This dashboard helps you understand your donor base through data-driven insights. Analyze retention rates, identify at-risk donors, run what-if scenarios, and make informed decisions to strengthen your fundraising strategy."
-              variant="info"
-              icon="📊"
-            >
-              <p className="text-sm text-slate-600 mt-2">
-                Hover over <GlossaryTooltip termKey="retention">underlined terms</GlossaryTooltip> for quick definitions,
-                or open the Glossary for the complete reference guide.
-              </p>
-            </InsightSummary>
-          </section>
+              {/* Tab Content */}
+              {activeTab === 'executive' && <ExecutiveSummary />}
 
-          {/* Key Metrics Grid */}
-          <section className="metrics-grid mb-8">
-            <h2 className="text-lg font-semibold text-slate-900 mb-4">
-              Key Insights
-            </h2>
-            <InsightSummaryGroup columns={2}>
-              <InsightSummary
-                title="Retention Performance"
-                summary="Your donor retention rate of 52% exceeds the sector benchmark of 45%. This indicates strong donor engagement and suggests your stewardship efforts are effective."
-                variant="success"
-                icon="+"
-              />
-              <InsightSummary
-                title="Concentration Risk Alert"
-                summary="Your top 10 donors account for 48% of total revenue. While within acceptable range, consider diversification strategies to reduce dependency."
-                variant="warning"
-                icon="!"
-              >
-                <p className="text-sm text-slate-600">
-                  Learn more about{' '}
-                  <GlossaryTooltip termKey="concentrationRisk">
-                    concentration risk
-                  </GlossaryTooltip>
-                </p>
-              </InsightSummary>
-            </InsightSummaryGroup>
-          </section>
+              {activeTab === 'health' && <DonorHealth />}
 
-          {/* Scenario Panel */}
-          <section className="scenario-section mb-8">
-            <h2 className="text-lg font-semibold text-slate-900 mb-4">
-              What-If Analysis
-            </h2>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <ScenarioPanel
-                onRun={handleRunScenario}
-                initialRetention={52}
-                initialRecurringGrowth={15}
-              />
-
-              {scenarioResults ? (
-                <div className="chart-container bg-white rounded-lg border border-slate-200 p-6">
-                  <h3 className="font-semibold text-slate-900 mb-4">Projected Impact</h3>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
-                      <span className="text-slate-600">Base Revenue</span>
-                      <span className="font-semibold text-slate-900">$500,000</span>
-                    </div>
-                    <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
-                      <span className="text-slate-600">
-                        <GlossaryTooltip termKey="retention">Retention</GlossaryTooltip> Impact
-                      </span>
-                      <span className={`font-semibold ${scenarioResults.retentionImpact >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {scenarioResults.retentionImpact >= 0 ? '+' : ''}${Math.round(scenarioResults.retentionImpact).toLocaleString()}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
-                      <span className="text-slate-600">
-                        <GlossaryTooltip termKey="recurringRate">Recurring</GlossaryTooltip> Impact
-                      </span>
-                      <span className={`font-semibold ${scenarioResults.recurringImpact >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
-                        {scenarioResults.recurringImpact >= 0 ? '+' : ''}${Math.round(scenarioResults.recurringImpact).toLocaleString()}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center p-4 bg-indigo-100 rounded-lg border-2 border-indigo-200">
-                      <span className="font-medium text-indigo-900">Projected Revenue</span>
-                      <span className="text-xl font-bold text-indigo-600">
-                        ${Math.round(scenarioResults.projectedRevenue).toLocaleString()}
-                      </span>
-                    </div>
-                  </div>
-                  <p className="mt-4 text-xs text-slate-500">
-                    Run at {new Date(scenarioResults.timestamp).toLocaleTimeString()}
-                  </p>
-                </div>
-              ) : (
-                <div className="chart-container bg-white rounded-lg border border-slate-200 border-dashed p-6 flex items-center justify-center">
-                  <p className="text-slate-400 text-center">
-                    Adjust the sliders and click "Run Scenario" to see projected impact
-                  </p>
+              {activeTab === 'patterns' && (
+                <div className="bg-slate-50 border-2 border-dashed border-slate-300 rounded-lg p-12 text-center">
+                  <svg className="w-16 h-16 mx-auto mb-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                  <h3 className="text-lg font-semibold text-slate-700 mb-2">Giving Patterns</h3>
+                  <p className="text-slate-500">This section is coming soon.</p>
                 </div>
               )}
-            </div>
-          </section>
 
-          {/* Glossary Terms Demo */}
-          <section className="mb-8">
-            <h2 className="text-lg font-semibold text-slate-900 mb-4">
-              Understanding Metrics
-            </h2>
-            <div className="bg-white rounded-lg border border-slate-200 p-6">
-              <p className="text-slate-600 leading-relaxed">
-                Key metrics to track include{' '}
-                <GlossaryTooltip termKey="retention">retention rate</GlossaryTooltip>,{' '}
-                <GlossaryTooltip termKey="lapseRisk">lapse risk</GlossaryTooltip>,{' '}
-                and{' '}
-                <GlossaryTooltip termKey="rfm">RFM scoring</GlossaryTooltip>.
-                Understanding these metrics helps you make data-driven decisions
-                about your fundraising strategy.
-              </p>
-            </div>
-          </section>
+              {activeTab === 'scenarios' && (
+                <div className="space-y-6">
+                  <section className="scenario-section">
+                    <h2 className="text-lg font-semibold text-slate-900 mb-4">
+                      What-If Analysis
+                    </h2>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <ScenarioPanel
+                        onRun={handleRunScenario}
+                        initialRetention={52}
+                        initialRecurringGrowth={15}
+                      />
+
+                      {scenarioResults ? (
+                        <div className="chart-container bg-white rounded-lg border border-slate-200 p-6">
+                          <h3 className="font-semibold text-slate-900 mb-4">Projected Impact</h3>
+                          <div className="space-y-4">
+                            <div className="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
+                              <span className="text-slate-600">Base Revenue</span>
+                              <span className="font-semibold text-slate-900">$500,000</span>
+                            </div>
+                            <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+                              <span className="text-slate-600">
+                                <GlossaryTooltip termKey="retention">Retention</GlossaryTooltip> Impact
+                              </span>
+                              <span className={`font-semibold ${scenarioResults.retentionImpact >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                {scenarioResults.retentionImpact >= 0 ? '+' : ''}${Math.round(scenarioResults.retentionImpact).toLocaleString()}
+                              </span>
+                            </div>
+                            <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
+                              <span className="text-slate-600">
+                                <GlossaryTooltip termKey="recurringRate">Recurring</GlossaryTooltip> Impact
+                              </span>
+                              <span className={`font-semibold ${scenarioResults.recurringImpact >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+                                {scenarioResults.recurringImpact >= 0 ? '+' : ''}${Math.round(scenarioResults.recurringImpact).toLocaleString()}
+                              </span>
+                            </div>
+                            <div className="flex justify-between items-center p-4 bg-indigo-100 rounded-lg border-2 border-indigo-200">
+                              <span className="font-medium text-indigo-900">Projected Revenue</span>
+                              <span className="text-xl font-bold text-indigo-600">
+                                ${Math.round(scenarioResults.projectedRevenue).toLocaleString()}
+                              </span>
+                            </div>
+                          </div>
+                          <p className="mt-4 text-xs text-slate-500">
+                            Run at {new Date(scenarioResults.timestamp).toLocaleTimeString()}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="chart-container bg-white rounded-lg border border-slate-200 border-dashed p-6 flex items-center justify-center">
+                          <p className="text-slate-400 text-center">
+                            Adjust the sliders and click "Run Scenario" to see projected impact
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </section>
+                </div>
+              )}
             </>
           )}
         </main>
