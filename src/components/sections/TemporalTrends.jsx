@@ -96,15 +96,15 @@ const TemporalTrends = () => {
       labels: years,
       datasets: [
         {
-          label: 'New Donors',
-          data: newDonors,
-          backgroundColor: colors.info,
-          borderRadius: 4,
-        },
-        {
           label: 'Returning Donors',
           data: returningDonors,
           backgroundColor: colors.success,
+          borderRadius: 4,
+        },
+        {
+          label: 'New Donors',
+          data: newDonors,
+          backgroundColor: colors.info,
           borderRadius: 4,
         }
       ],

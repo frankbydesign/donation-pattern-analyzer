@@ -210,7 +210,7 @@ const Glossary = ({ isOpen, onClose }) => {
               <li key={key}>
                 <button
                   onClick={() => toggleTerm(key)}
-                  className="w-full text-left p-4 rounded-lg border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/50 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="glossary-card w-full text-left p-4 rounded-lg border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/50 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   aria-expanded={expandedTerms.has(key)}
                 >
                   <div className="flex items-center justify-between">

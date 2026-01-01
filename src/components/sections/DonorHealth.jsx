@@ -11,10 +11,18 @@ const DonorHealth = () => {
   const { layer1, layer2, isLoading } = useDataStore();
 
   // Calculate RFM segment distribution from individual donor scores
+  // Exclude anonymous donors from RFM segmentation
   const rfmSegmentData = useMemo(() => {
-    if (!layer2?.rfm_analysis?.scores) return null;
+    if (!layer2?.rfm_analysis?.scores || !layer1?.donors) return null;
 
-    // Count donors by RFM segment
+    // Build a set of anonymous donor IDs for quick lookup
+    const anonymousDonorIds = new Set(
+      layer1.donors
+        .filter(donor => donor.is_anonymous === true)
+        .map(donor => donor.donor_id)
+    );
+
+    // Count donors by RFM segment, excluding anonymous donors
     const segments = {
       'Champions (555)': 0,
       'Loyal (4-5 range)': 0,
@@ -23,7 +31,10 @@ const DonorHealth = () => {
       'Lost (1-2 range)': 0,
     };
 
-    Object.values(layer2.rfm_analysis.scores).forEach(score => {
+    Object.entries(layer2.rfm_analysis.scores).forEach(([donorId, score]) => {
+      // Skip anonymous donors
+      if (anonymousDonorIds.has(donorId)) return;
+
       const total = score.rfm_total || 0;
 
       if (total === 15) {
@@ -54,21 +65,40 @@ const DonorHealth = () => {
         borderRadius: 4,
       }],
     };
-  }, [layer2]);
+  }, [layer2, layer1]);
 
   // Prepare lapse risk breakdown data
+  // Exclude anonymous donors from lapse risk analysis
   const lapseRiskData = useMemo(() => {
-    if (!layer2?.lapse_risk_analysis?.risk_distribution) return null;
+    if (!layer2?.lapse_risk_analysis?.individual_risks || !layer1?.donors) return null;
 
-    const riskDist = layer2.lapse_risk_analysis.risk_distribution;
+    // Build a set of anonymous donor IDs for quick lookup
+    const anonymousDonorIds = new Set(
+      layer1.donors
+        .filter(donor => donor.is_anonymous === true)
+        .map(donor => donor.donor_id)
+    );
+
+    // Recalculate risk distribution excluding anonymous donors
+    const riskCounts = { low: 0, medium: 0, high: 0 };
+
+    Object.entries(layer2.lapse_risk_analysis.individual_risks).forEach(([donorId, riskData]) => {
+      // Skip anonymous donors
+      if (anonymousDonorIds.has(donorId)) return;
+
+      const riskLevel = riskData.risk_level?.toLowerCase();
+      if (riskLevel === 'low') riskCounts.low++;
+      else if (riskLevel === 'medium') riskCounts.medium++;
+      else if (riskLevel === 'high') riskCounts.high++;
+    });
 
     return {
       labels: ['Low Risk', 'Medium Risk', 'High Risk'],
       datasets: [{
         data: [
-          riskDist.low || 0,
-          riskDist.medium || 0,
-          riskDist.high || 0,
+          riskCounts.low,
+          riskCounts.medium,
+          riskCounts.high,
         ],
         backgroundColor: [
           colors.risk.low,      // emerald
@@ -78,24 +108,54 @@ const DonorHealth = () => {
         borderWidth: 0,
       }],
     };
-  }, [layer2]);
+  }, [layer2, layer1]);
 
   // Calculate key health metrics
+  // Exclude anonymous donors from relationship-based metrics
   const healthMetrics = useMemo(() => {
     if (!layer1 || !layer2) return null;
 
-    const totalDonors = layer2.executive_summary?.key_metrics?.total_donors || 0;
-    const atRiskCount = layer2.executive_summary?.health_indicators?.total_at_risk || 0;
-    const activeCount = layer1.summary?.status_breakdown?.active || 0;
+    // Filter out anonymous donors for contactable donor counts
+    const contactableDonors = layer1.donors?.filter(donor => donor.is_anonymous !== true) || [];
+    const totalContactableDonors = contactableDonors.length;
 
-    // Calculate retention rate (active donors / total donors who have given before)
-    const retentionRate = totalDonors > 0 ? ((activeCount / totalDonors) * 100).toFixed(1) : 0;
+    // Count active contactable donors (gave in last year)
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+    const activeContactable = contactableDonors.filter(donor => {
+      const lastGiftDate = donor.last_gift ? new Date(donor.last_gift) : null;
+      return lastGiftDate && lastGiftDate >= oneYearAgo;
+    }).length;
+
+    // Count at-risk donors (excluding anonymous)
+    const anonymousDonorIds = new Set(
+      layer1.donors
+        .filter(donor => donor.is_anonymous === true)
+        .map(donor => donor.donor_id)
+    );
+
+    let atRiskCount = 0;
+    if (layer2.lapse_risk_analysis?.individual_risks) {
+      atRiskCount = Object.entries(layer2.lapse_risk_analysis.individual_risks)
+        .filter(([donorId, riskData]) => {
+          const isAnonymous = anonymousDonorIds.has(donorId);
+          const isHighRisk = riskData.risk_level?.toLowerCase() === 'high' ||
+                            riskData.risk_level?.toLowerCase() === 'medium';
+          return !isAnonymous && isHighRisk;
+        })
+        .length;
+    }
+
+    // Calculate retention rate (active contactable donors / total contactable donors)
+    const retentionRate = totalContactableDonors > 0
+      ? ((activeContactable / totalContactableDonors) * 100).toFixed(1)
+      : 0;
 
     return {
       retentionRate,
       atRiskCount,
-      activeCount,
-      totalDonors,
+      activeCount: activeContactable,
+      totalDonors: totalContactableDonors,
     };
   }, [layer1, layer2]);
 
@@ -166,12 +226,12 @@ const DonorHealth = () => {
         <div className="bg-white rounded-lg border border-slate-200 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-slate-600">Total Donors</p>
+              <p className="text-sm font-medium text-slate-600">Contactable Donors</p>
               <p className="text-3xl font-bold text-slate-900 mt-2">
                 {healthMetrics.totalDonors.toLocaleString()}
               </p>
               <p className="text-xs text-slate-500 mt-1">
-                Analyzed in this report
+                Excludes anonymous donors
               </p>
             </div>
             <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -186,56 +246,72 @@ const DonorHealth = () => {
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* RFM Segment Distribution */}
-        <ChartCard
-          title="RFM Segment Distribution"
-          subtitle="Donors grouped by Recency, Frequency, and Monetary scores"
-        >
-          <BarChart
-            labels={rfmSegmentData.labels}
-            datasets={rfmSegmentData.datasets}
-            height={300}
-            options={{
-              indexAxis: 'y',
-              scales: {
-                x: {
-                  ticks: {
-                    callback: function(value) {
-                      return value.toLocaleString();
+        <div className="space-y-4">
+          <ChartCard
+            title="RFM Segment Distribution"
+            subtitle="Donors grouped by Recency, Frequency, and Monetary scores"
+          >
+            <BarChart
+              labels={rfmSegmentData.labels}
+              datasets={rfmSegmentData.datasets}
+              height={300}
+              options={{
+                indexAxis: 'y',
+                scales: {
+                  x: {
+                    ticks: {
+                      callback: function(value) {
+                        return value.toLocaleString();
+                      }
                     }
                   }
                 }
-              }
-            }}
-          />
-        </ChartCard>
+              }}
+            />
+          </ChartCard>
+
+          {/* RFM Explanation */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div>
+                <h4 className="font-semibold text-blue-900 mb-1 text-sm">Understanding RFM Segments</h4>
+                <p className="text-sm text-blue-800 leading-relaxed">
+                  RFM scores donors on Recency, Frequency, and Monetary value. Champions (555) are your best—recent, frequent, generous.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Lapse Risk Breakdown */}
-        <ChartCard
-          title="Lapse Risk Analysis"
-          subtitle="Distribution of donors by lapse risk level"
-        >
-          <DoughnutChart
-            labels={lapseRiskData.labels}
-            datasets={lapseRiskData.datasets}
-            height={300}
-          />
-        </ChartCard>
-      </div>
+        <div className="space-y-4">
+          <ChartCard
+            title="Lapse Risk Analysis"
+            subtitle="Distribution of donors by lapse risk level"
+          >
+            <DoughnutChart
+              labels={lapseRiskData.labels}
+              datasets={lapseRiskData.datasets}
+              height={300}
+            />
+          </ChartCard>
 
-      {/* Additional Insights */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-        <div className="flex items-start gap-3">
-          <svg className="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <div>
-            <h4 className="font-semibold text-blue-900 mb-1">Understanding RFM Segments</h4>
-            <p className="text-sm text-blue-800 leading-relaxed">
-              RFM analysis scores donors based on Recency (how recently they gave),
-              Frequency (how often they give), and Monetary value (how much they give).
-              Champions (555) are your best donors—recent, frequent, and generous.
-              Focus retention efforts on "At Risk" and "Lost" segments to prevent further lapse.
-            </p>
+          {/* Lapse Risk Explanation */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div>
+                <h4 className="font-semibold text-blue-900 mb-1 text-sm">Understanding Lapse Risk</h4>
+                <p className="text-sm text-blue-800 leading-relaxed">
+                  Lapse risk predicts which donors may stop giving based on recency and frequency patterns. High-risk donors gave consistently before but have gone quiet—they're your best reactivation candidates because they already believe in the mission. Focus personal outreach here, not mass email.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>

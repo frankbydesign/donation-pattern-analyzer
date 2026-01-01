@@ -380,12 +380,13 @@ const Tour = ({
 
   return (
     <>
-      {/* Tour trigger button */}
+      {/* Tour trigger button - temporarily hidden until positioning is fixed */}
       <button
         onClick={startTour}
         className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
         aria-label="Start guided tour"
         title="Take a guided tour"
+        style={{ display: 'none' }}
       >
         <svg
           className="w-5 h-5"
