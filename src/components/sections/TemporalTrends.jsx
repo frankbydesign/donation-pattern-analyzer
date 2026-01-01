@@ -69,21 +69,41 @@ const TemporalTrends = () => {
     const counts = years.map(year => donorsByYear[year].size);
 
     // Create point styles based on highlighting
+    // BUG FIX: Make points always visible (5-6px), with highlighted points even larger (8px)
     const pointRadii = years.map(year => {
-      if (!dateRangeBounds) return 3;
+      if (!dateRangeBounds) return 5; // Default: clearly visible points
       const yearStart = new Date(year, 0, 1);
       const yearEnd = new Date(year, 11, 31);
       const isHighlighted = yearStart <= dateRangeBounds.end && yearEnd >= dateRangeBounds.start;
-      return isHighlighted ? 6 : 3;
+      return isHighlighted ? 8 : 4; // Highlighted: large, non-highlighted: smaller but still visible
     });
 
     const pointBorderWidths = years.map(year => {
-      if (!dateRangeBounds) return 0;
+      if (!dateRangeBounds) return 2; // Default: visible border
       const yearStart = new Date(year, 0, 1);
       const yearEnd = new Date(year, 11, 31);
       const isHighlighted = yearStart <= dateRangeBounds.end && yearEnd >= dateRangeBounds.start;
-      return isHighlighted ? 3 : 0;
+      return isHighlighted ? 3 : 2; // Thicker border for highlighted
     });
+
+    // BUG FIX: Use segment styling to make highlighting OBVIOUS with opacity changes
+    const segmentBorderColor = (ctx) => {
+      if (!dateRangeBounds) return colors.primary;
+      const year = years[ctx.p0DataIndex];
+      const yearStart = new Date(year, 0, 1);
+      const yearEnd = new Date(year, 11, 31);
+      const isHighlighted = yearStart <= dateRangeBounds.end && yearEnd >= dateRangeBounds.start;
+      return isHighlighted ? colors.primary : colors.primary + '60'; // 60% opacity for non-highlighted
+    };
+
+    const segmentBackgroundColor = (ctx) => {
+      if (!dateRangeBounds) return colors.primary + '20';
+      const year = years[ctx.p0DataIndex];
+      const yearStart = new Date(year, 0, 1);
+      const yearEnd = new Date(year, 11, 31);
+      const isHighlighted = yearStart <= dateRangeBounds.end && yearEnd >= dateRangeBounds.start;
+      return isHighlighted ? colors.primary + '30' : colors.primary + '10'; // More transparent for non-highlighted
+    };
 
     return {
       labels: years,
@@ -92,6 +112,10 @@ const TemporalTrends = () => {
         data: counts,
         borderColor: colors.primary,
         backgroundColor: colors.primary + '20',
+        segment: {
+          borderColor: segmentBorderColor,
+          backgroundColor: segmentBackgroundColor,
+        },
         tension: 0.4,
         fill: true,
         pointRadius: pointRadii,
@@ -142,13 +166,38 @@ const TemporalTrends = () => {
     const newDonors = years.map(year => yearStats[year].new);
     const returningDonors = years.map(year => yearStats[year].returning);
 
-    // Create border widths based on highlighting
-    const borderWidths = years.map(year => {
-      if (!dateRangeBounds) return 0;
+    // BUG FIX: Use opacity to make highlighting OBVIOUS (100% for highlighted, 50% for non-highlighted)
+    const returningOpacity = years.map(year => {
+      if (!dateRangeBounds) return 1.0; // No filter: full opacity
       const yearStart = new Date(year, 0, 1);
       const yearEnd = new Date(year, 11, 31);
       const isHighlighted = yearStart <= dateRangeBounds.end && yearEnd >= dateRangeBounds.start;
-      return isHighlighted ? 3 : 0;
+      return isHighlighted ? 1.0 : 0.4; // Highlighted: full opacity, non-highlighted: 40% opacity
+    });
+
+    const newOpacity = years.map(year => {
+      if (!dateRangeBounds) return 1.0; // No filter: full opacity
+      const yearStart = new Date(year, 0, 1);
+      const yearEnd = new Date(year, 11, 31);
+      const isHighlighted = yearStart <= dateRangeBounds.end && yearEnd >= dateRangeBounds.start;
+      return isHighlighted ? 1.0 : 0.4; // Highlighted: full opacity, non-highlighted: 40% opacity
+    });
+
+    // Create background colors with opacity
+    const returningBackgroundColors = returningOpacity.map(opacity => {
+      const hex = colors.success.replace('#', '');
+      const r = parseInt(hex.substring(0, 2), 16);
+      const g = parseInt(hex.substring(2, 4), 16);
+      const b = parseInt(hex.substring(4, 6), 16);
+      return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+    });
+
+    const newBackgroundColors = newOpacity.map(opacity => {
+      const hex = colors.info.replace('#', '');
+      const r = parseInt(hex.substring(0, 2), 16);
+      const g = parseInt(hex.substring(2, 4), 16);
+      const b = parseInt(hex.substring(4, 6), 16);
+      return `rgba(${r}, ${g}, ${b}, ${opacity})`;
     });
 
     return {
@@ -157,18 +206,16 @@ const TemporalTrends = () => {
         {
           label: 'Returning Donors',
           data: returningDonors,
-          backgroundColor: colors.success,
+          backgroundColor: returningBackgroundColors,
           borderRadius: 4,
-          borderColor: '#10b981', // emerald-500
-          borderWidth: borderWidths,
+          borderWidth: 0,
         },
         {
           label: 'New Donors',
           data: newDonors,
-          backgroundColor: colors.info,
+          backgroundColor: newBackgroundColors,
           borderRadius: 4,
-          borderColor: '#3b82f6', // blue-500
-          borderWidth: borderWidths,
+          borderWidth: 0,
         }
       ],
       rawData: { years, newDonors, returningDonors, yearStats },
