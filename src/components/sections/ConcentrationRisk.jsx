@@ -20,7 +20,6 @@ const ConcentrationRisk = () => {
 
   // State for donor loss simulation
   const [excludedDonorIds, setExcludedDonorIds] = useState(new Set());
-  const [showComparison, setShowComparison] = useState(false);
 
   // Calculate top donors and metrics
   const topDonorsData = useMemo(() => {
@@ -194,7 +193,6 @@ const ConcentrationRisk = () => {
   // Handle reset
   const handleReset = () => {
     setExcludedDonorIds(new Set());
-    setShowComparison(false);
   };
 
   // Handle select/deselect all
@@ -312,20 +310,12 @@ const ConcentrationRisk = () => {
           </button>
 
           {isSimulating && (
-            <>
-              <button
-                onClick={handleReset}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors text-sm ml-auto"
-              >
-                Reset Simulation
-              </button>
-              <button
-                onClick={() => setShowComparison(!showComparison)}
-                className="px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg font-medium transition-colors text-sm"
-              >
-                {showComparison ? 'Hide' : 'Show'} Comparison
-              </button>
-            </>
+            <button
+              onClick={handleReset}
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors text-sm ml-auto"
+            >
+              Reset Simulation
+            </button>
           )}
         </div>
       </div>

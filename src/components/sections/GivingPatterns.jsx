@@ -315,7 +315,7 @@ const GivingPatterns = () => {
       </div>
 
       {/* Bottom Row: Understanding Giving Patterns + Day of Week Chart */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Understanding Giving Patterns - Left Column */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
           <div className="flex items-start gap-3">
