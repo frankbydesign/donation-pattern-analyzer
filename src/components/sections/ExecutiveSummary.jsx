@@ -538,7 +538,7 @@ const ExecutiveSummary = () => {
         borderRadius: 4,
       }],
     };
-  }, [getFilteredDonors]);
+  }, [filters, getFilteredDonors]);
 
   console.log('[EXEC_SUMMARY] Before render checks:', {
     isLoading,
