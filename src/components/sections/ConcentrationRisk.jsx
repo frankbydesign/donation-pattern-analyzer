@@ -72,7 +72,7 @@ const ConcentrationRisk = () => {
       concentrationData,
       totalDonors: sortedDonors.length
     };
-  }, [layer1, getFilteredDonors]);
+  }, [layer1, filters, getFilteredDonors]);
 
   // Calculate simulated metrics (with excluded donors removed)
   const simulatedMetrics = useMemo(() => {
@@ -259,7 +259,7 @@ const ConcentrationRisk = () => {
 
       {/* Risk Assessment Banner */}
       {riskAssessment && (
-        <div className={`bg-${riskAssessment.color}-50 border border-${riskAssessment.color}-200 rounded-lg p-6`}>
+        <div className={`bg-${riskAssessment.color}-50 border border-${riskAssessment.color}-200 rounded-lg p-6 max-w-4xl mx-auto`}>
           <div className="flex items-start gap-3">
             <div className={`w-2 h-2 bg-${riskAssessment.color}-500 rounded-full mt-2 flex-shrink-0`}></div>
             <div className="flex-1">
