@@ -171,27 +171,88 @@ const ExecutiveSummary = () => {
     const generatedInsights = [];
     const filteredDonors = getFilteredDonors();
 
-    // Calculate retention rate (contactable donors only) from filtered data
-    const contactableDonors = filteredDonors.filter(donor => donor.is_anonymous !== true);
-    const oneYearAgo = new Date();
-    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-    const activeContactable = contactableDonors.filter(donor => {
-      const lastGiftDate = donor.last_gift ? new Date(donor.last_gift) : null;
-      return lastGiftDate && lastGiftDate >= oneYearAgo;
-    }).length;
-    const retentionRate = contactableDonors.length > 0
-      ? (activeContactable / contactableDonors.length) * 100
-      : 0;
+    // Calculate retention rate: donors from prior period who also gave in current period
+    // This is the TRUE retention calculation (prior -> current, not just "active")
+    let retentionRate = null;
+    let retentionDetails = null;
+    let allTimeRetention = null;
 
-    // Calculate all-time retention for comparison
-    const allContactable = getAllDonors().filter(donor => donor.is_anonymous !== true);
-    const allActiveContactable = allContactable.filter(donor => {
-      const lastGiftDate = donor.last_gift ? new Date(donor.last_gift) : null;
-      return lastGiftDate && lastGiftDate >= oneYearAgo;
-    }).length;
-    const allTimeRetention = allContactable.length > 0
-      ? (allActiveContactable / allContactable.length) * 100
-      : 0;
+    const calculateRetentionForPeriod = (currentStart, currentEnd) => {
+      const allDonors = getAllDonors();
+      const currentStartDate = new Date(currentStart);
+      const currentEndDate = new Date(currentEnd);
+
+      // Calculate prior period (same length, immediately before current period)
+      const periodDays = Math.round((currentEndDate - currentStartDate) / (1000 * 60 * 60 * 24));
+      const priorEndDate = new Date(currentStartDate);
+      priorEndDate.setDate(priorEndDate.getDate() - 1);
+      const priorStartDate = new Date(priorEndDate);
+      priorStartDate.setDate(priorStartDate.getDate() - periodDays);
+
+      // Get contactable donors (exclude anonymous)
+      const contactableDonors = allDonors.filter(donor => donor.is_anonymous !== true);
+
+      // Find donors who gave in prior period
+      const priorDonors = new Set();
+      contactableDonors.forEach(donor => {
+        const gaveInPrior = donor.gifts?.some(gift => {
+          const giftDate = new Date(gift.date);
+          return giftDate >= priorStartDate && giftDate <= priorEndDate;
+        });
+        if (gaveInPrior) {
+          priorDonors.add(donor.donor_id);
+        }
+      });
+
+      // Find donors who gave in current period
+      const currentDonors = new Set();
+      contactableDonors.forEach(donor => {
+        const gaveInCurrent = donor.gifts?.some(gift => {
+          const giftDate = new Date(gift.date);
+          return giftDate >= currentStartDate && giftDate <= currentEndDate;
+        });
+        if (gaveInCurrent) {
+          currentDonors.add(donor.donor_id);
+        }
+      });
+
+      // Find donors who gave in BOTH periods (retained donors)
+      const retainedDonors = [...priorDonors].filter(donorId => currentDonors.has(donorId));
+
+      // Calculate retention rate
+      const priorCount = priorDonors.size;
+      const retainedCount = retainedDonors.length;
+      const rate = priorCount > 0 ? (retainedCount / priorCount) * 100 : null;
+
+      return {
+        rate,
+        retainedCount,
+        priorCount,
+        priorStart: priorStartDate.toISOString().split('T')[0],
+        priorEnd: priorEndDate.toISOString().split('T')[0]
+      };
+    };
+
+    // Calculate retention based on current filter
+    if (filters.dateRange) {
+      const { start, end } = filters.dateRange;
+      const result = calculateRetentionForPeriod(start, end);
+      retentionRate = result.rate;
+      retentionDetails = result;
+    } else {
+      // All Time: Calculate retention for most recent complete year vs prior year
+      const currentYear = new Date().getFullYear();
+      const lastCompleteYear = currentYear - 1;
+      const currentStart = `${lastCompleteYear}-01-01`;
+      const currentEnd = `${lastCompleteYear}-12-31`;
+      const result = calculateRetentionForPeriod(currentStart, currentEnd);
+      retentionRate = result.rate;
+      retentionDetails = result;
+      allTimeRetention = retentionRate; // For "All Time" mode, this is the retention
+    }
+
+    // Sanity check: If retention exceeds 95%, flag as potentially erroneous
+    const isRetentionSuspicious = retentionRate !== null && retentionRate > 95;
 
     // Calculate top 10 donor concentration from filtered data
     const sortedDonors = [...filteredDonors].sort((a, b) => {
@@ -251,15 +312,25 @@ const ExecutiveSummary = () => {
     }
 
     // RED (Critical) Insights
-    if (retentionRate < 35) {
-      const comparison = metrics.isFiltered && Math.abs(retentionRate - allTimeRetention) > 2
-        ? ` (vs. ${allTimeRetention.toFixed(1)}% all-time)`
-        : '';
+    // Only show retention insights if we have valid data and it's not suspiciously high
+    if (retentionRate !== null && !isRetentionSuspicious) {
+      const retentionDisplay = `${retentionDetails.retainedCount} of ${retentionDetails.priorCount} donors retained (${retentionRate.toFixed(1)}%)`;
+
+      if (retentionRate < 35) {
+        generatedInsights.push({
+          severity: 'critical',
+          finding: `Retention rate: ${retentionDisplay} is critically low (sector benchmark: 40-45%).`,
+          action: 'Urgent: Implement thank-you calls within 48 hours of first gift, launch a monthly giving program, and send personalized impact updates to recent donors.',
+          priority: 1
+        });
+      }
+    } else if (isRetentionSuspicious) {
+      // Flag suspicious retention rates instead of displaying them
       generatedInsights.push({
-        severity: 'critical',
-        finding: `Retention rate: ${retentionRate.toFixed(1)}%${comparison} is critically low (sector benchmark: 40-45%).`,
-        action: 'Urgent: Implement thank-you calls within 48 hours of first gift, launch a monthly giving program, and send personalized impact updates to recent donors.',
-        priority: 1
+        severity: 'warning',
+        finding: `Retention calculation shows unusually high rate (>95%) - possible data quality issue.`,
+        action: 'Review donor data for the current and prior periods to ensure completeness and accuracy.',
+        priority: 2
       });
     }
 
@@ -282,10 +353,11 @@ const ExecutiveSummary = () => {
     }
 
     // YELLOW (Warning) Insights
-    if (retentionRate >= 35 && retentionRate < 45) {
+    if (retentionRate !== null && !isRetentionSuspicious && retentionRate >= 35 && retentionRate < 45) {
+      const retentionDisplay = `${retentionDetails.retainedCount} of ${retentionDetails.priorCount} donors retained (${retentionRate.toFixed(1)}%)`;
       generatedInsights.push({
         severity: 'warning',
-        finding: `Retention rate: ${retentionRate.toFixed(1)}% is below sector benchmark (40-45%).`,
+        finding: `Retention rate: ${retentionDisplay} is below sector benchmark (40-45%).`,
         action: 'Focus on repeat donation strategies: thank-you calls, monthly giving program promotion, and personalized impact updates.',
         priority: 2
       });
@@ -319,10 +391,11 @@ const ExecutiveSummary = () => {
     }
 
     // GREEN (Positive) Insights
-    if (retentionRate >= 45) {
+    if (retentionRate !== null && !isRetentionSuspicious && retentionRate >= 45 && retentionRate <= 70) {
+      const retentionDisplay = `${retentionDetails.retainedCount} of ${retentionDetails.priorCount} donors retained (${retentionRate.toFixed(1)}%)`;
       generatedInsights.push({
         severity: 'positive',
-        finding: `Retention rate: ${retentionRate.toFixed(1)}% exceeds sector benchmark (40-45%).`,
+        finding: `Retention rate: ${retentionDisplay} exceeds sector benchmark (40-45%).`,
         action: 'Strong donor retention! Continue current stewardship practices and document what\'s working for future scaling.',
         priority: 3
       });
