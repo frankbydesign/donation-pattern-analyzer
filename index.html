@@ -1063,7 +1063,7 @@
                         <span class="landing-card-icon">📊</span>
                         <div class="landing-card-title">Giving Patterns</div>
                         <div class="landing-card-question">How do people give?</div>
-                        <div class="landing-card-description">Discover when donations peak, which channels work, and who's becoming a regular.</div>
+                        <div class="landing-card-description">Discover when donations peak and who's becoming a regular supporter.</div>
                     </div>
 
                     <div class="landing-card" data-navigate="temporal">
@@ -1253,11 +1253,6 @@
                         <canvas id="weekdayChart"></canvas>
                     </div>
                 </div>
-            </div>
-
-            <div class="card">
-                <div class="card-title">Channel Performance</div>
-                <div class="grid-2" id="channel-stats"></div>
             </div>
 
             <div class="card">
@@ -2104,8 +2099,7 @@ python -m http.server 8080
                     </div>
                     <div>
                         <strong>Days Since Last Gift:</strong> ${rfm.recency_days}<br>
-                        <strong>RFM Score:</strong> ${rfm.rfm_combined} (Total: ${rfm.rfm_total})<br>
-                        <strong>Channel:</strong> ${donor.channel}
+                        <strong>RFM Score:</strong> ${rfm.rfm_combined} (Total: ${rfm.rfm_total})
                     </div>
                 </div>
                 <h4 style="margin: 1rem 0 0.5rem;">Recent Gift History</h4>
@@ -2239,7 +2233,6 @@ python -m http.server 8080
         function renderGivingPatterns() {
             const monthly = layer2Data.giving_patterns.monthly_patterns;
             const weekday = layer2Data.giving_patterns.weekday_patterns;
-            const channels = layer2Data.channel_performance;
             const valueAnalysis = layer2Data.value_analysis;
 
             // Monthly chart
@@ -2318,27 +2311,6 @@ python -m http.server 8080
                     }
                 }
             });
-
-            // Channel stats
-            document.getElementById('channel-stats').innerHTML = Object.entries(channels).map(([channel, data]) => `
-                <div style="padding: 1rem; background: var(--bg-light); border-radius: 8px;">
-                    <h4 style="text-transform: capitalize; margin-bottom: 0.5rem;">${channel}</h4>
-                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; font-size: 0.9rem;">
-                        <div>
-                            <div style="color: var(--text-muted);">Donors</div>
-                            <div style="font-weight: 600;">${formatNumber(data.donor_count)}</div>
-                        </div>
-                        <div>
-                            <div style="color: var(--text-muted);">Total</div>
-                            <div style="font-weight: 600;">${formatCurrency(data.total_amount)}</div>
-                        </div>
-                        <div>
-                            <div style="color: var(--text-muted);">Avg Gift</div>
-                            <div style="font-weight: 600;">${formatCurrency(data.avg_gift)}</div>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
 
             // Distribution chart
             const levels = valueAnalysis.giving_levels;
