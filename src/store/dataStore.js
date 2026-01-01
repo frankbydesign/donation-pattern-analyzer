@@ -344,7 +344,7 @@ const useDataStore = create((set, get) => ({
       };
     }).filter(donor => donor.rfm_score);
 
-    // Filter by segment
+    // Filter by segment - thresholds must match DonorHealth.jsx calculation
     return donorsWithScores.filter(donor => {
       const total = donor.rfm_score.rfm_total || 0;
 
@@ -353,11 +353,11 @@ const useDataStore = create((set, get) => ({
       } else if (segmentName.includes('Loyal')) {
         return total >= 12 && total < 15;
       } else if (segmentName.includes('Potential')) {
-        return total >= 9 && total < 12;
+        return total >= 10 && total < 12;
       } else if (segmentName.includes('At Risk')) {
-        return total >= 6 && total < 9;
+        return total >= 8 && total < 10;
       } else if (segmentName.includes('Lost')) {
-        return total < 6;
+        return total < 8;
       }
 
       return false;

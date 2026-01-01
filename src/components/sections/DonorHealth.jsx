@@ -46,12 +46,12 @@ const DonorHealth = () => {
     console.log('[RFM] Filtered contactable donor count:', filteredDonorIds.size);
 
     // Count donors by RFM segment, only for filtered contactable donors
-    const segments = {
-      'Champions (555)': 0,
-      'Loyal (4-5 range)': 0,
-      'Potential (3-4 range)': 0,
-      'At Risk (2-3 range)': 0,
-      'Lost (1-2 range)': 0,
+    const segmentCounts = {
+      'Champions': 0,
+      'Loyal': 0,
+      'Potential': 0,
+      'At Risk': 0,
+      'Lost': 0,
     };
 
     Object.entries(layer2.rfm_analysis.scores).forEach(([donorId, score]) => {
@@ -61,26 +61,29 @@ const DonorHealth = () => {
       const total = score.rfm_total || 0;
 
       if (total === 15) {
-        segments['Champions (555)']++;
+        segmentCounts['Champions']++;
       } else if (total >= 12) {
-        segments['Loyal (4-5 range)']++;
+        segmentCounts['Loyal']++;
       } else if (total >= 10) {
-        segments['Potential (3-4 range)']++;
+        segmentCounts['Potential']++;
       } else if (total >= 8) {
-        segments['At Risk (2-3 range)']++;
+        segmentCounts['At Risk']++;
       } else {
         // Scores 6-7 (and theoretically lower, but dataset min is 6)
-        segments['Lost (1-2 range)']++;
+        segmentCounts['Lost']++;
       }
     });
 
-    console.log('[RFM] Segment distribution:', segments);
+    console.log('[RFM] Segment distribution:', segmentCounts);
+
+    // Create labels with counts for consistency
+    const labelsWithCounts = Object.entries(segmentCounts).map(([name, count]) => `${name} (${count})`);
 
     return {
-      labels: Object.keys(segments),
+      labels: labelsWithCounts,
       datasets: [{
         label: 'Donors',
-        data: Object.values(segments),
+        data: Object.values(segmentCounts),
         backgroundColor: [
           colors.segments.champions,  // Champions - emerald
           colors.segments.loyal,       // Loyal - blue
@@ -354,20 +357,6 @@ const DonorHealth = () => {
 
   return (
     <div className="space-y-6">
-      {/* Time Filter Notice */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <div className="flex items-start gap-3">
-          <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <div>
-            <p className="text-sm text-blue-800 leading-relaxed">
-              <strong>Note:</strong> Donor health metrics reflect all-time patterns and are not affected by the time period filter. These analyses require complete donor history to be meaningful.
-            </p>
-          </div>
-        </div>
-      </div>
-
       {/* Filter Status */}
       <FilterStatus
         mode="filtered"
@@ -449,15 +438,15 @@ const DonorHealth = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* RFM Segment Distribution */}
         <div className="space-y-4">
-          <div className="bg-slate-50 border border-slate-200 rounded px-3 py-2">
-            <p className="text-xs text-slate-600">
-              <strong>Based on all-time donor history</strong>
-            </p>
-          </div>
           <ChartCard
             title="RFM Segment Distribution"
             subtitle="Donors grouped by Recency, Frequency, and Monetary scores"
           >
+            {filters.dateRange && (
+              <div className="mb-3 px-3 py-2 bg-blue-50 border border-blue-200 rounded text-xs text-slate-600">
+                <strong>Based on all-time donor history</strong>
+              </div>
+            )}
             {rfmSegmentData ? (
               <div className="relative group">
                 <BarChart
@@ -508,9 +497,16 @@ const DonorHealth = () => {
               </svg>
               <div>
                 <h4 className="font-semibold text-blue-900 mb-1 text-sm">Understanding RFM Segments</h4>
-                <p className="text-sm text-blue-800 leading-relaxed">
-                  RFM scores donors on Recency, Frequency, and Monetary value. Champions (555) are your best—recent, frequent, generous.
+                <p className="text-sm text-blue-800 leading-relaxed mb-2">
+                  RFM scores donors on Recency, Frequency, and Monetary value (1-5 each). Combined scores range from 3-15.
                 </p>
+                <ul className="text-xs text-blue-700 space-y-1">
+                  <li><strong>Champions (15):</strong> Perfect score—recent, frequent, generous donors</li>
+                  <li><strong>Loyal (12-14):</strong> Strong, consistent supporters</li>
+                  <li><strong>Potential (10-11):</strong> Engaged donors with room to grow</li>
+                  <li><strong>At Risk (8-9):</strong> Previously engaged, now declining</li>
+                  <li><strong>Lost {'(<8)'}:</strong> Inactive or minimal engagement</li>
+                </ul>
               </div>
             </div>
           </div>
@@ -518,15 +514,15 @@ const DonorHealth = () => {
 
         {/* Lapse Risk Breakdown */}
         <div className="space-y-4">
-          <div className="bg-slate-50 border border-slate-200 rounded px-3 py-2">
-            <p className="text-xs text-slate-600">
-              <strong>Based on all-time donor history</strong>
-            </p>
-          </div>
-          <ChartCard
-            title="Lapse Risk Analysis"
-            subtitle="Distribution of donors by lapse risk level"
-          >
+        <ChartCard
+          title="Lapse Risk Analysis"
+          subtitle="Distribution of donors by lapse risk level"
+        >
+            {filters.dateRange && (
+              <div className="mb-3 px-3 py-2 bg-blue-50 border border-blue-200 rounded text-xs text-slate-600">
+                <strong>Based on all-time donor history</strong>
+              </div>
+            )}
             {lapseRiskData ? (
               <div className="relative group">
                 <DoughnutChart
