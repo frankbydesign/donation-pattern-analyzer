@@ -31,10 +31,12 @@ const useDataStore = create((set, get) => ({
 
     try {
       // Fetch all three data layers in parallel
+      // Use BASE_URL to ensure paths work in both dev and production (GitHub Pages)
+      const baseUrl = import.meta.env.BASE_URL;
       const [layer1Response, layer2Response, layer3Response] = await Promise.all([
-        fetch('/data/donor_data_layer1.json'),
-        fetch('/data/donor_data_layer2.json'),
-        fetch('/data/donor_data_layer3.json')
+        fetch(`${baseUrl}data/donor_data_layer1.json`),
+        fetch(`${baseUrl}data/donor_data_layer2.json`),
+        fetch(`${baseUrl}data/donor_data_layer3.json`)
       ]);
 
       // Check for fetch errors
