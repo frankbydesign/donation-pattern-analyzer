@@ -405,39 +405,6 @@ def calculate_upgrade_downgrade_analysis(donors):
 
     return result
 
-def calculate_channel_analysis(donors):
-    """
-    Analyze performance by donation channel.
-    """
-    channel_metrics = defaultdict(lambda: {
-        'donor_count': 0,
-        'total_gifts': 0,
-        'total_amount': 0,
-        'gift_amounts': []
-    })
-
-    for donor in donors:
-        channel = donor.get('channel', 'unknown')
-        channel_metrics[channel]['donor_count'] += 1
-        channel_metrics[channel]['total_gifts'] += donor['total_gifts']
-        channel_metrics[channel]['total_amount'] += donor['total_amount']
-
-        for gift in donor.get('gifts', []):
-            channel_metrics[channel]['gift_amounts'].append(gift['amount'])
-
-    result = {}
-    for channel, data in channel_metrics.items():
-        result[channel] = {
-            'donor_count': data['donor_count'],
-            'total_gifts': data['total_gifts'],
-            'total_amount': round(data['total_amount'], 2),
-            'avg_gift': round(mean(data['gift_amounts']), 2) if data['gift_amounts'] else 0,
-            'avg_donor_value': round(data['total_amount'] / data['donor_count'], 2) if data['donor_count'] > 0 else 0,
-            'gifts_per_donor': round(data['total_gifts'] / data['donor_count'], 2) if data['donor_count'] > 0 else 0
-        }
-
-    return result
-
 def calculate_lapse_risk_scores(donors, rfm_scores, reference_date):
     """
     Calculate lapse risk scores for active and lapsing donors.
@@ -636,9 +603,6 @@ def generate_layer2_insights(layer1_path="donor_data_layer1.json", output_path="
     print("Analyzing upgrades/downgrades...")
     upgrade_analysis = calculate_upgrade_downgrade_analysis(donors)
 
-    print("Analyzing channels...")
-    channel_analysis = calculate_channel_analysis(donors)
-
     print("Calculating lapse risk scores...")
     risk_analysis = calculate_lapse_risk_scores(donors, rfm_scores, reference_date)
 
@@ -688,7 +652,6 @@ def generate_layer2_insights(layer1_path="donor_data_layer1.json", output_path="
         'retention_analysis': retention,
         'value_analysis': value_metrics,
         'upgrade_downgrade_analysis': upgrade_analysis,
-        'channel_performance': channel_analysis,
         'lapse_risk_analysis': {
             'risk_distribution': risk_analysis['risk_distribution'],
             'total_at_risk': risk_analysis['total_at_risk'],
