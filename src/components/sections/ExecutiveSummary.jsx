@@ -9,7 +9,18 @@ import { FilterStatus } from '../filters';
  * Shows total donors, revenue, average gift size, segment distribution, and revenue trends
  */
 const ExecutiveSummary = () => {
-  const { layer1, layer2, isLoading, getFilteredDonors, getAllDonors, filters } = useDataStore();
+  const {
+    layer1,
+    layer2,
+    isLoading,
+    getFilteredDonors,
+    getAllDonors,
+    filters,
+    openDrillDownPanel,
+    getDonorsByLapseRisk,
+    getTopDonorsByValue,
+    getDateRangeLabel
+  } = useDataStore();
 
   // Calculate metrics for both filtered and all-time data
   const metrics = useMemo(() => {
@@ -327,6 +338,56 @@ const ExecutiveSummary = () => {
     );
   }
 
+  // Handle clicking on high-risk donors
+  const handleHighRiskClick = () => {
+    const highRiskDonors = getDonorsByLapseRisk('high');
+    const mediumRiskDonors = getDonorsByLapseRisk('medium');
+    const allAtRiskDonors = [...highRiskDonors, ...mediumRiskDonors];
+    const dateContext = filters.dateRange ? ` (${getDateRangeLabel()})` : '';
+    openDrillDownPanel({
+      type: 'lapseRisk',
+      filter: 'high-medium',
+      title: `At-Risk Donors${dateContext}`,
+      donors: allAtRiskDonors
+    });
+  };
+
+  // Handle clicking on top donors
+  const handleTopDonorsClick = () => {
+    const topDonors = getTopDonorsByValue(10);
+    const dateContext = filters.dateRange ? ` (${getDateRangeLabel()})` : '';
+    openDrillDownPanel({
+      type: 'topDonors',
+      filter: 'top-10',
+      title: `Top 10 Donors${dateContext}`,
+      donors: topDonors
+    });
+  };
+
+  // Make insight text clickable
+  const makeInsightClickable = (text, finding) => {
+    // Check for high-risk donor count pattern
+    const highRiskMatch = text.match(/(\d+)\s+donors.*elevated lapse risk/);
+    if (highRiskMatch) {
+      const count = highRiskMatch[1];
+      return text.replace(
+        count,
+        `<button class="text-indigo-600 hover:text-indigo-800 underline font-semibold cursor-pointer" data-action="high-risk">${count}</button>`
+      );
+    }
+
+    // Check for top donors pattern
+    const topDonorsMatch = text.match(/Top\s+(\d+)\s+donors/);
+    if (topDonorsMatch) {
+      return text.replace(
+        /Top\s+\d+\s+donors/,
+        `<button class="text-indigo-600 hover:text-indigo-800 underline font-semibold cursor-pointer" data-action="top-donors">Top 10 donors</button>`
+      );
+    }
+
+    return text;
+  };
+
   return (
     <div className="space-y-6">
       {/* Filter Status */}
@@ -372,13 +433,22 @@ const ExecutiveSummary = () => {
                 <div
                   key={index}
                   className={`${config.bgColor} ${config.borderColor} border rounded-lg p-4`}
+                  onClick={(e) => {
+                    const action = e.target.getAttribute('data-action');
+                    if (action === 'high-risk') {
+                      handleHighRiskClick();
+                    } else if (action === 'top-donors') {
+                      handleTopDonorsClick();
+                    }
+                  }}
                 >
                   <div className="flex items-start gap-3">
                     <div className={`w-2 h-2 ${config.dotColor} rounded-full mt-2 flex-shrink-0`}></div>
                     <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-medium ${config.textColor} mb-1`}>
-                        {insight.finding}
-                      </p>
+                      <p
+                        className={`text-sm font-medium ${config.textColor} mb-1`}
+                        dangerouslySetInnerHTML={{ __html: makeInsightClickable(insight.finding, insight) }}
+                      />
                       <p className={`text-sm ${config.labelColor}`}>
                         <span className="font-semibold">→ </span>
                         {insight.action}

@@ -9,7 +9,18 @@ import { FilterStatus } from '../filters';
  * Shows RFM segment distribution, lapse risk breakdown, and key health indicators
  */
 const DonorHealth = () => {
-  const { layer1, layer2, isLoading, getFilteredDonors, getAllDonors, filters } = useDataStore();
+  const {
+    layer1,
+    layer2,
+    isLoading,
+    getFilteredDonors,
+    getAllDonors,
+    filters,
+    openDrillDownPanel,
+    getDonorsBySegment,
+    getDonorsByLapseRisk,
+    getDateRangeLabel
+  } = useDataStore();
 
   // Calculate RFM segment distribution from individual donor scores
   // Use filtered donors and exclude anonymous donors from RFM segmentation
@@ -217,6 +228,31 @@ const DonorHealth = () => {
     );
   }
 
+  // Handle RFM segment click
+  const handleSegmentClick = (segmentName) => {
+    const donors = getDonorsBySegment(segmentName);
+    const dateContext = filters.dateRange ? ` (${getDateRangeLabel()})` : '';
+    openDrillDownPanel({
+      type: 'segment',
+      filter: segmentName,
+      title: `${segmentName} Donors${dateContext}`,
+      donors
+    });
+  };
+
+  // Handle lapse risk click
+  const handleLapseRiskClick = (riskLevel) => {
+    const donors = getDonorsByLapseRisk(riskLevel);
+    const dateContext = filters.dateRange ? ` (${getDateRangeLabel()})` : '';
+    const riskLabel = riskLevel.charAt(0).toUpperCase() + riskLevel.slice(1);
+    openDrillDownPanel({
+      type: 'lapseRisk',
+      filter: riskLevel,
+      title: `${riskLabel} Risk Donors${dateContext}`,
+      donors
+    });
+  };
+
   return (
     <div className="space-y-6">
       {/* Filter Status */}
@@ -300,23 +336,40 @@ const DonorHealth = () => {
             subtitle="Donors grouped by Recency, Frequency, and Monetary scores"
           >
             {rfmSegmentData ? (
-              <BarChart
-                labels={rfmSegmentData.labels}
-                datasets={rfmSegmentData.datasets}
-                height={300}
-                options={{
-                  indexAxis: 'y',
-                  scales: {
-                    x: {
-                      ticks: {
-                        callback: function(value) {
-                          return value.toLocaleString();
+              <div className="relative group">
+                <BarChart
+                  labels={rfmSegmentData.labels}
+                  datasets={rfmSegmentData.datasets}
+                  height={300}
+                  options={{
+                    indexAxis: 'y',
+                    scales: {
+                      x: {
+                        ticks: {
+                          callback: function(value) {
+                            return value.toLocaleString();
+                          }
                         }
                       }
+                    },
+                    onClick: (event, elements) => {
+                      if (elements.length > 0) {
+                        const index = elements[0].index;
+                        const segmentName = rfmSegmentData.labels[index];
+                        handleSegmentClick(segmentName);
+                      }
+                    },
+                    onHover: (event, elements) => {
+                      event.native.target.style.cursor = elements.length > 0 ? 'pointer' : 'default';
                     }
-                  }
-                }}
-              />
+                  }}
+                />
+                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="bg-indigo-600 text-white text-xs px-2 py-1 rounded shadow-lg">
+                    Click to view donors
+                  </div>
+                </div>
+              </div>
             ) : (
               <div className="flex items-center justify-center h-[300px] text-slate-400">
                 <p>No RFM data available</p>
@@ -347,11 +400,31 @@ const DonorHealth = () => {
             subtitle="Distribution of donors by lapse risk level"
           >
             {lapseRiskData ? (
-              <DoughnutChart
-                labels={lapseRiskData.labels}
-                datasets={lapseRiskData.datasets}
-                height={300}
-              />
+              <div className="relative group">
+                <DoughnutChart
+                  labels={lapseRiskData.labels}
+                  datasets={lapseRiskData.datasets}
+                  height={300}
+                  options={{
+                    onClick: (event, elements) => {
+                      if (elements.length > 0) {
+                        const index = elements[0].index;
+                        const riskLevels = ['low', 'medium', 'high'];
+                        const riskLevel = riskLevels[index];
+                        handleLapseRiskClick(riskLevel);
+                      }
+                    },
+                    onHover: (event, elements) => {
+                      event.native.target.style.cursor = elements.length > 0 ? 'pointer' : 'default';
+                    }
+                  }}
+                />
+                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="bg-indigo-600 text-white text-xs px-2 py-1 rounded shadow-lg">
+                    Click to view donors
+                  </div>
+                </div>
+              </div>
             ) : (
               <div className="flex items-center justify-center h-[300px] text-slate-400">
                 <p>No lapse risk data available</p>
