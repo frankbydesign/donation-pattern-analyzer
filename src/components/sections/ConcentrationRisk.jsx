@@ -259,66 +259,28 @@ const ConcentrationRisk = () => {
 
       {/* Risk Assessment Banner */}
       {riskAssessment && (
-        <div className={`bg-${riskAssessment.color}-50 border border-${riskAssessment.color}-200 rounded-lg p-6 max-w-4xl mx-auto`}>
-          <div className="flex items-start gap-3">
-            <div className={`w-2 h-2 bg-${riskAssessment.color}-500 rounded-full mt-2 flex-shrink-0`}></div>
-            <div className="flex-1">
-              <h3 className={`text-lg font-semibold text-${riskAssessment.color}-900 mb-2`}>
-                {riskAssessment.level === 'high' ? 'High Concentration Risk' :
-                 riskAssessment.level === 'moderate' ? 'Moderate Concentration Risk' :
-                 'Healthy Diversification'}
-              </h3>
-              <p className={`text-sm text-${riskAssessment.color}-800 mb-2`}>
-                {riskAssessment.narrative}
-              </p>
-              <p className={`text-sm text-${riskAssessment.color}-700`}>
-                <span className="font-semibold">→ </span>
-                {riskAssessment.recommendation}
-              </p>
+        <div className="max-w-4xl mx-auto">
+          <div className={`bg-${riskAssessment.color}-50 border border-${riskAssessment.color}-200 rounded-lg p-6`}>
+            <div className="flex items-start gap-3">
+              <div className={`w-2 h-2 bg-${riskAssessment.color}-500 rounded-full mt-2 flex-shrink-0`}></div>
+              <div className="flex-1">
+                <h3 className={`text-lg font-semibold text-${riskAssessment.color}-900 mb-2`}>
+                  {riskAssessment.level === 'high' ? 'High Concentration Risk' :
+                   riskAssessment.level === 'moderate' ? 'Moderate Concentration Risk' :
+                   'Healthy Diversification'}
+                </h3>
+                <p className={`text-sm text-${riskAssessment.color}-800 mb-2`}>
+                  {riskAssessment.narrative}
+                </p>
+                <p className={`text-sm text-${riskAssessment.color}-700`}>
+                  <span className="font-semibold">→ </span>
+                  {riskAssessment.recommendation}
+                </p>
+              </div>
             </div>
           </div>
         </div>
       )}
-
-      {/* What-If Preset Buttons */}
-      <div className="bg-white rounded-lg border border-slate-200 p-6">
-        <div className="mb-4">
-          <h3 className="text-lg font-semibold text-slate-900">Quick Scenarios</h3>
-          <p className="text-sm text-slate-600 mt-1">
-            Instantly model the impact of losing your top donors
-          </p>
-        </div>
-
-        <div className="flex flex-wrap gap-3">
-          <button
-            onClick={() => handlePreset(1)}
-            className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition-colors text-sm"
-          >
-            What if we lose our #1 donor?
-          </button>
-          <button
-            onClick={() => handlePreset(3)}
-            className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition-colors text-sm"
-          >
-            What if we lose our top 3 donors?
-          </button>
-          <button
-            onClick={() => handlePreset(10)}
-            className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition-colors text-sm"
-          >
-            What if we lose our top 10 donors?
-          </button>
-
-          {isSimulating && (
-            <button
-              onClick={handleReset}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors text-sm ml-auto"
-            >
-              Reset Simulation
-            </button>
-          )}
-        </div>
-      </div>
 
       {/* Impact Summary (shown when simulating) */}
       {isSimulating && simulatedMetrics && (
@@ -492,6 +454,46 @@ const ConcentrationRisk = () => {
             >
               {excludedDonorIds.size > 0 ? 'Clear All' : 'Select All'}
             </button>
+          </div>
+
+          {/* Quick Scenarios - Directly above the donor table */}
+          <div className="mt-6 pt-6 border-t border-slate-100">
+            <div className="mb-3">
+              <h4 className="text-base font-semibold text-slate-900">Quick Scenarios</h4>
+              <p className="text-sm text-slate-600 mt-1">
+                Instantly model the impact of losing your top donors
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <button
+                onClick={() => handlePreset(1)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition-colors text-sm"
+              >
+                What if we lose our #1 donor?
+              </button>
+              <button
+                onClick={() => handlePreset(3)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition-colors text-sm"
+              >
+                What if we lose our top 3 donors?
+              </button>
+              <button
+                onClick={() => handlePreset(10)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition-colors text-sm"
+              >
+                What if we lose our top 10 donors?
+              </button>
+
+              {isSimulating && (
+                <button
+                  onClick={handleReset}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors text-sm ml-auto"
+                >
+                  Reset Simulation
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
