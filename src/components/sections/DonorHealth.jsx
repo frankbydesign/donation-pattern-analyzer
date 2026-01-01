@@ -2,27 +2,31 @@ import React, { useMemo } from 'react';
 import useDataStore from '../../store/dataStore';
 import { ChartCard, BarChart, DoughnutChart } from '../charts';
 import { colors } from '../../config/chartDefaults';
+import { FilterStatus } from '../filters';
 
 /**
  * DonorHealth - Dashboard section displaying donor health metrics
  * Shows RFM segment distribution, lapse risk breakdown, and key health indicators
  */
 const DonorHealth = () => {
-  const { layer1, layer2, isLoading } = useDataStore();
+  const { layer1, layer2, isLoading, getFilteredDonors, getAllDonors, filters } = useDataStore();
 
   // Calculate RFM segment distribution from individual donor scores
-  // Exclude anonymous donors from RFM segmentation
+  // Use filtered donors and exclude anonymous donors from RFM segmentation
   const rfmSegmentData = useMemo(() => {
-    if (!layer2?.rfm_analysis?.scores || !layer1?.donors) return null;
+    if (!layer2?.rfm_analysis?.scores) return null;
 
-    // Build a set of anonymous donor IDs for quick lookup
-    const anonymousDonorIds = new Set(
-      layer1.donors
-        .filter(donor => donor.is_anonymous === true)
+    const filteredDonors = getFilteredDonors();
+    if (!filteredDonors || filteredDonors.length === 0) return null;
+
+    // Build a set of filtered donor IDs (only contactable donors in the filtered set)
+    const filteredDonorIds = new Set(
+      filteredDonors
+        .filter(donor => donor.is_anonymous !== true)
         .map(donor => donor.donor_id)
     );
 
-    // Count donors by RFM segment, excluding anonymous donors
+    // Count donors by RFM segment, only for filtered contactable donors
     const segments = {
       'Champions (555)': 0,
       'Loyal (4-5 range)': 0,
@@ -32,8 +36,8 @@ const DonorHealth = () => {
     };
 
     Object.entries(layer2.rfm_analysis.scores).forEach(([donorId, score]) => {
-      // Skip anonymous donors
-      if (anonymousDonorIds.has(donorId)) return;
+      // Only include donors in the filtered set
+      if (!filteredDonorIds.has(donorId)) return;
 
       const total = score.rfm_total || 0;
 
@@ -65,26 +69,29 @@ const DonorHealth = () => {
         borderRadius: 4,
       }],
     };
-  }, [layer2, layer1]);
+  }, [layer2, getFilteredDonors]);
 
   // Prepare lapse risk breakdown data
-  // Exclude anonymous donors from lapse risk analysis
+  // Use filtered donors and exclude anonymous donors from lapse risk analysis
   const lapseRiskData = useMemo(() => {
-    if (!layer2?.lapse_risk_analysis?.individual_risks || !layer1?.donors) return null;
+    if (!layer2?.lapse_risk_analysis?.individual_risks) return null;
 
-    // Build a set of anonymous donor IDs for quick lookup
-    const anonymousDonorIds = new Set(
-      layer1.donors
-        .filter(donor => donor.is_anonymous === true)
+    const filteredDonors = getFilteredDonors();
+    if (!filteredDonors || filteredDonors.length === 0) return null;
+
+    // Build a set of filtered donor IDs (only contactable donors in the filtered set)
+    const filteredDonorIds = new Set(
+      filteredDonors
+        .filter(donor => donor.is_anonymous !== true)
         .map(donor => donor.donor_id)
     );
 
-    // Recalculate risk distribution excluding anonymous donors
+    // Recalculate risk distribution for filtered contactable donors only
     const riskCounts = { low: 0, medium: 0, high: 0 };
 
     Object.entries(layer2.lapse_risk_analysis.individual_risks).forEach(([donorId, riskData]) => {
-      // Skip anonymous donors
-      if (anonymousDonorIds.has(donorId)) return;
+      // Only include donors in the filtered set
+      if (!filteredDonorIds.has(donorId)) return;
 
       const riskLevel = riskData.risk_level?.toLowerCase();
       if (riskLevel === 'low') riskCounts.low++;
@@ -108,16 +115,26 @@ const DonorHealth = () => {
         borderWidth: 0,
       }],
     };
-  }, [layer2, layer1]);
+  }, [layer2, getFilteredDonors]);
 
-  // Calculate key health metrics
+  // Calculate key health metrics from filtered data
   // Exclude anonymous donors from relationship-based metrics
   const healthMetrics = useMemo(() => {
-    if (!layer1 || !layer2) return null;
+    if (!layer2) return null;
 
-    // Filter out anonymous donors for contactable donor counts
-    const contactableDonors = layer1.donors?.filter(donor => donor.is_anonymous !== true) || [];
+    const filteredDonors = getFilteredDonors();
+    const allDonors = getAllDonors();
+    const isFiltered = filters.dateRange !== null;
+
+    if (!filteredDonors || filteredDonors.length === 0) return null;
+
+    // Filter out anonymous donors for contactable donor counts (from filtered data)
+    const contactableDonors = filteredDonors.filter(donor => donor.is_anonymous !== true);
     const totalContactableDonors = contactableDonors.length;
+
+    // All-time contactable donors for comparison
+    const allContactableDonors = allDonors.filter(donor => donor.is_anonymous !== true);
+    const allTimeContactable = allContactableDonors.length;
 
     // Count active contactable donors (gave in last year)
     const oneYearAgo = new Date();
@@ -127,21 +144,18 @@ const DonorHealth = () => {
       return lastGiftDate && lastGiftDate >= oneYearAgo;
     }).length;
 
-    // Count at-risk donors (excluding anonymous)
-    const anonymousDonorIds = new Set(
-      layer1.donors
-        .filter(donor => donor.is_anonymous === true)
-        .map(donor => donor.donor_id)
-    );
+    // Build set of filtered contactable donor IDs
+    const filteredContactableIds = new Set(contactableDonors.map(d => d.donor_id));
 
+    // Count at-risk donors in the filtered set
     let atRiskCount = 0;
     if (layer2.lapse_risk_analysis?.individual_risks) {
       atRiskCount = Object.entries(layer2.lapse_risk_analysis.individual_risks)
         .filter(([donorId, riskData]) => {
-          const isAnonymous = anonymousDonorIds.has(donorId);
+          const isInFilteredSet = filteredContactableIds.has(donorId);
           const isHighRisk = riskData.risk_level?.toLowerCase() === 'high' ||
                             riskData.risk_level?.toLowerCase() === 'medium';
-          return !isAnonymous && isHighRisk;
+          return isInFilteredSet && isHighRisk;
         })
         .length;
     }
@@ -156,8 +170,10 @@ const DonorHealth = () => {
       atRiskCount,
       activeCount: activeContactable,
       totalDonors: totalContactableDonors,
+      allTimeContactable,
+      isFiltered
     };
-  }, [layer1, layer2]);
+  }, [layer2, getFilteredDonors, getAllDonors, filters]);
 
   if (isLoading) {
     return (
@@ -170,7 +186,7 @@ const DonorHealth = () => {
     );
   }
 
-  if (!rfmSegmentData || !lapseRiskData || !healthMetrics) {
+  if (!healthMetrics) {
     return (
       <div className="bg-amber-50 border border-amber-200 rounded-lg p-6">
         <p className="text-amber-800">Unable to load donor health data.</p>
@@ -178,8 +194,40 @@ const DonorHealth = () => {
     );
   }
 
+  // Handle empty filter results
+  if (healthMetrics.totalDonors === 0) {
+    return (
+      <div className="space-y-6">
+        <FilterStatus mode="filtered" />
+        <div className="bg-slate-50 border-2 border-dashed border-slate-300 rounded-lg p-12">
+          <div className="text-center">
+            <svg className="w-16 h-16 text-slate-300 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <h3 className="text-lg font-semibold text-slate-700 mb-2">No Donor Data in Selected Period</h3>
+            <p className="text-slate-600 mb-4">
+              No contactable donors made gifts during the selected time range.
+            </p>
+            <p className="text-sm text-slate-500">
+              Try expanding the date range or resetting to "All Time" to view donor health metrics.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      {/* Filter Status */}
+      <FilterStatus
+        mode="filtered"
+        context={healthMetrics.isFiltered
+          ? `Showing ${healthMetrics.totalDonors} of ${healthMetrics.allTimeContactable} contactable donors based on selected period`
+          : null
+        }
+      />
+
       {/* Key Health Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Retention Rate */}
@@ -251,23 +299,29 @@ const DonorHealth = () => {
             title="RFM Segment Distribution"
             subtitle="Donors grouped by Recency, Frequency, and Monetary scores"
           >
-            <BarChart
-              labels={rfmSegmentData.labels}
-              datasets={rfmSegmentData.datasets}
-              height={300}
-              options={{
-                indexAxis: 'y',
-                scales: {
-                  x: {
-                    ticks: {
-                      callback: function(value) {
-                        return value.toLocaleString();
+            {rfmSegmentData ? (
+              <BarChart
+                labels={rfmSegmentData.labels}
+                datasets={rfmSegmentData.datasets}
+                height={300}
+                options={{
+                  indexAxis: 'y',
+                  scales: {
+                    x: {
+                      ticks: {
+                        callback: function(value) {
+                          return value.toLocaleString();
+                        }
                       }
                     }
                   }
-                }
-              }}
-            />
+                }}
+              />
+            ) : (
+              <div className="flex items-center justify-center h-[300px] text-slate-400">
+                <p>No RFM data available</p>
+              </div>
+            )}
           </ChartCard>
 
           {/* RFM Explanation */}
@@ -292,11 +346,17 @@ const DonorHealth = () => {
             title="Lapse Risk Analysis"
             subtitle="Distribution of donors by lapse risk level"
           >
-            <DoughnutChart
-              labels={lapseRiskData.labels}
-              datasets={lapseRiskData.datasets}
-              height={300}
-            />
+            {lapseRiskData ? (
+              <DoughnutChart
+                labels={lapseRiskData.labels}
+                datasets={lapseRiskData.datasets}
+                height={300}
+              />
+            ) : (
+              <div className="flex items-center justify-center h-[300px] text-slate-400">
+                <p>No lapse risk data available</p>
+              </div>
+            )}
           </ChartCard>
 
           {/* Lapse Risk Explanation */}

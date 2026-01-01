@@ -94,7 +94,8 @@ const useDataStore = create((set, get) => ({
 
   /**
    * Get filtered donors based on current filter state
-   * @returns {Array} Filtered array of donor objects
+   * Also filters each donor's gifts array to only include gifts within the range
+   * @returns {Array} Filtered array of donor objects with filtered gifts
    */
   getFilteredDonors: () => {
     const { layer1, filters } = get();
@@ -108,15 +109,25 @@ const useDataStore = create((set, get) => ({
     // Apply date range filter
     if (filters.dateRange) {
       const { start, end } = filters.dateRange;
-      filteredDonors = filteredDonors.filter((donor) => {
-        // Filter donors who have at least one gift within the date range
-        return donor.gifts?.some((gift) => {
-          const giftDate = new Date(gift.date);
-          const startDate = start ? new Date(start) : new Date('1900-01-01');
-          const endDate = end ? new Date(end) : new Date('2100-12-31');
-          return giftDate >= startDate && giftDate <= endDate;
-        });
-      });
+      const startDate = start ? new Date(start) : new Date('1900-01-01');
+      const endDate = end ? new Date(end) : new Date('2100-12-31');
+
+      filteredDonors = filteredDonors
+        .filter((donor) => {
+          // Filter donors who have at least one gift within the date range
+          return donor.gifts?.some((gift) => {
+            const giftDate = new Date(gift.date);
+            return giftDate >= startDate && giftDate <= endDate;
+          });
+        })
+        .map((donor) => ({
+          ...donor,
+          // Also filter the gifts array to only include gifts within the range
+          gifts: donor.gifts?.filter((gift) => {
+            const giftDate = new Date(gift.date);
+            return giftDate >= startDate && giftDate <= endDate;
+          }) || []
+        }));
     }
 
     // Apply status filter (stub for now - will be enhanced when status field is added)
@@ -132,6 +143,112 @@ const useDataStore = create((set, get) => ({
     }
 
     return filteredDonors;
+  },
+
+  /**
+   * Get all donors without any date filtering (for sections that need full history)
+   * @returns {Array} All donor objects
+   */
+  getAllDonors: () => {
+    const { layer1 } = get();
+    return layer1?.donors || [];
+  },
+
+  /**
+   * Get flat array of all gifts within the current date range
+   * @returns {Array} Filtered array of gift objects
+   */
+  getFilteredGifts: () => {
+    const { layer1, filters } = get();
+
+    if (!layer1?.donors) {
+      return [];
+    }
+
+    let gifts = [];
+
+    layer1.donors.forEach(donor => {
+      if (donor.gifts) {
+        donor.gifts.forEach(gift => {
+          gifts.push({ ...gift, donor_id: donor.donor_id });
+        });
+      }
+    });
+
+    // Apply date range filter if active
+    if (filters.dateRange) {
+      const { start, end } = filters.dateRange;
+      const startDate = start ? new Date(start) : new Date('1900-01-01');
+      const endDate = end ? new Date(end) : new Date('2100-12-31');
+
+      gifts = gifts.filter(gift => {
+        const giftDate = new Date(gift.date);
+        return giftDate >= startDate && giftDate <= endDate;
+      });
+    }
+
+    return gifts;
+  },
+
+  /**
+   * Get all gifts without any date filtering
+   * @returns {Array} All gift objects
+   */
+  getAllGifts: () => {
+    const { layer1 } = get();
+
+    if (!layer1?.donors) {
+      return [];
+    }
+
+    let gifts = [];
+    layer1.donors.forEach(donor => {
+      if (donor.gifts) {
+        donor.gifts.forEach(gift => {
+          gifts.push({ ...gift, donor_id: donor.donor_id });
+        });
+      }
+    });
+
+    return gifts;
+  },
+
+  /**
+   * Get human-readable label for the current date filter
+   * @returns {string} Date range label (e.g., "Jan 2024 - Dec 2024" or "All Time")
+   */
+  getDateRangeLabel: () => {
+    const { filters } = get();
+
+    if (!filters.dateRange) {
+      return 'All Time';
+    }
+
+    const { start, end } = filters.dateRange;
+    const formatDate = (dateStr) => {
+      const d = new Date(dateStr);
+      return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+    };
+
+    return `${formatDate(start)} - ${formatDate(end)}`;
+  },
+
+  /**
+   * Get date range bounds for highlighting in charts
+   * @returns {Object|null} { start: Date, end: Date } or null if no filter active
+   */
+  getDateRangeBounds: () => {
+    const { filters } = get();
+
+    if (!filters.dateRange) {
+      return null;
+    }
+
+    const { start, end } = filters.dateRange;
+    return {
+      start: new Date(start),
+      end: new Date(end)
+    };
   }
 }));
 
