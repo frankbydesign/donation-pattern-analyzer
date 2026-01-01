@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import useDataStore from '../../store/dataStore';
 import { ChartCard, LineChart, BarChart } from '../charts';
 import { colors } from '../../config/chartDefaults';
@@ -21,6 +21,22 @@ const TemporalTrends = () => {
     getNewDonorsByYear,
     getReturningDonorsByYear
   } = useDataStore();
+
+  // State for cohort retention view toggle
+  const [retentionView, setRetentionView] = useState('heatmap'); // 'heatmap' or 'table'
+
+  // Helper function to get heatmap color based on retention percentage
+  const getRetentionColor = (rate) => {
+    if (rate === undefined || rate === null) return { bg: 'bg-slate-100', text: 'text-slate-400', border: 'border-slate-200' };
+    if (rate >= 60) return { bg: 'bg-emerald-600', text: 'text-white', border: 'border-emerald-700' };
+    if (rate >= 40) return { bg: 'bg-emerald-400', text: 'text-emerald-900', border: 'border-emerald-500' };
+    if (rate >= 20) return { bg: 'bg-yellow-300', text: 'text-yellow-900', border: 'border-yellow-400' };
+    if (rate >= 10) return { bg: 'bg-orange-300', text: 'text-orange-900', border: 'border-orange-400' };
+    return { bg: 'bg-red-400', text: 'text-red-900', border: 'border-red-500' };
+  };
+
+  // Get date range for highlighting
+  const dateRangeBounds = getDateRangeBounds();
 
   // Calculate year-over-year donor counts
   const yoyDonorCountsData = useMemo(() => {
@@ -52,6 +68,23 @@ const TemporalTrends = () => {
     const years = Object.keys(donorsByYear).sort();
     const counts = years.map(year => donorsByYear[year].size);
 
+    // Create point styles based on highlighting
+    const pointRadii = years.map(year => {
+      if (!dateRangeBounds) return 3;
+      const yearStart = new Date(year, 0, 1);
+      const yearEnd = new Date(year, 11, 31);
+      const isHighlighted = yearStart <= dateRangeBounds.end && yearEnd >= dateRangeBounds.start;
+      return isHighlighted ? 6 : 3;
+    });
+
+    const pointBorderWidths = years.map(year => {
+      if (!dateRangeBounds) return 0;
+      const yearStart = new Date(year, 0, 1);
+      const yearEnd = new Date(year, 11, 31);
+      const isHighlighted = yearStart <= dateRangeBounds.end && yearEnd >= dateRangeBounds.start;
+      return isHighlighted ? 3 : 0;
+    });
+
     return {
       labels: years,
       datasets: [{
@@ -61,10 +94,15 @@ const TemporalTrends = () => {
         backgroundColor: colors.primary + '20',
         tension: 0.4,
         fill: true,
+        pointRadius: pointRadii,
+        pointHoverRadius: pointRadii.map(r => r + 2),
+        pointBorderColor: colors.primary,
+        pointBackgroundColor: '#ffffff',
+        pointBorderWidth: pointBorderWidths,
       }],
       rawData: { years, counts },
     };
-  }, [layer1]);
+  }, [layer1, dateRangeBounds]);
 
   // Calculate new vs returning donors by year
   const newVsReturningData = useMemo(() => {
@@ -104,6 +142,15 @@ const TemporalTrends = () => {
     const newDonors = years.map(year => yearStats[year].new);
     const returningDonors = years.map(year => yearStats[year].returning);
 
+    // Create border widths based on highlighting
+    const borderWidths = years.map(year => {
+      if (!dateRangeBounds) return 0;
+      const yearStart = new Date(year, 0, 1);
+      const yearEnd = new Date(year, 11, 31);
+      const isHighlighted = yearStart <= dateRangeBounds.end && yearEnd >= dateRangeBounds.start;
+      return isHighlighted ? 3 : 0;
+    });
+
     return {
       labels: years,
       datasets: [
@@ -112,17 +159,21 @@ const TemporalTrends = () => {
           data: returningDonors,
           backgroundColor: colors.success,
           borderRadius: 4,
+          borderColor: '#10b981', // emerald-500
+          borderWidth: borderWidths,
         },
         {
           label: 'New Donors',
           data: newDonors,
           backgroundColor: colors.info,
           borderRadius: 4,
+          borderColor: '#3b82f6', // blue-500
+          borderWidth: borderWidths,
         }
       ],
       rawData: { years, newDonors, returningDonors, yearStats },
     };
-  }, [layer1]);
+  }, [layer1, dateRangeBounds]);
 
   // Process cohort retention data from layer2
   const cohortRetentionData = useMemo(() => {
@@ -417,104 +468,210 @@ const TemporalTrends = () => {
         </ChartCard>
       </div>
 
-      {/* Cohort Retention Table */}
+      {/* Cohort Retention Heatmap/Table */}
       <div className="bg-white rounded-lg border border-slate-200 p-6">
-        <div className="mb-4">
-          <h3 className="text-lg font-semibold text-slate-900">Cohort Retention Analysis</h3>
-          <p className="text-sm text-slate-600 mt-1">
-            Percentage of donors from each acquisition year who returned in subsequent years
-          </p>
+        <div className="mb-4 flex items-start justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-slate-900">Cohort Retention Analysis</h3>
+            <p className="text-sm text-slate-600 mt-1">
+              Read rows left-to-right to see how each cohort retained over time
+            </p>
+          </div>
+          {/* View Toggle */}
+          <div className="flex gap-1 bg-slate-100 rounded-lg p-1">
+            <button
+              onClick={() => setRetentionView('heatmap')}
+              className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+                retentionView === 'heatmap'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Heatmap
+            </button>
+            <button
+              onClick={() => setRetentionView('table')}
+              className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+                retentionView === 'table'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Table
+            </button>
+          </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-200">
-            <thead>
-              <tr className="bg-slate-50">
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                  Cohort Year
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                  Donors Acquired
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                  Year 1
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                  Year 2
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                  Year 3
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                  Year 4
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                  Year 5
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-slate-200">
+        {/* Heatmap View */}
+        {retentionView === 'heatmap' && (
+          <div className="overflow-x-auto">
+            <div className="inline-block min-w-full">
+              {/* Header Row */}
+              <div className="flex items-center mb-2">
+                <div className="w-32 px-3 py-2">
+                  <span className="text-xs font-semibold text-slate-700 uppercase">Cohort</span>
+                </div>
+                <div className="w-24 px-3 py-2">
+                  <span className="text-xs font-semibold text-slate-700 uppercase">Acquired</span>
+                </div>
+                {[1, 2, 3, 4, 5].map(yearNum => (
+                  <div key={yearNum} className="w-24 px-3 py-2 text-center">
+                    <span className="text-xs font-semibold text-slate-700 uppercase">Year {yearNum}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Data Rows */}
               {cohortRetentionData.cohorts.map((cohort, index) => (
-                <tr key={cohort.cohortYear} className={index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
-                  <td
-                    className="px-4 py-3 text-sm font-medium text-indigo-600 hover:text-indigo-800 cursor-pointer underline"
-                    onClick={() => handleCohortClick(cohort.cohortYear)}
-                  >
-                    {cohort.cohortYear}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-slate-600">
-                    {cohort.acquired.toLocaleString()}
-                  </td>
+                <div key={cohort.cohortYear} className="flex items-center mb-1">
+                  {/* Cohort Year + Size */}
+                  <div className="w-32 px-3 py-2">
+                    <button
+                      onClick={() => handleCohortClick(cohort.cohortYear)}
+                      className="text-sm font-semibold text-indigo-600 hover:text-indigo-800 hover:underline"
+                    >
+                      {cohort.cohortYear}
+                    </button>
+                  </div>
+                  <div className="w-24 px-3 py-2">
+                    <span className="text-xs text-slate-600">{cohort.acquired.toLocaleString()}</span>
+                  </div>
+
+                  {/* Retention Cells */}
                   {[1, 2, 3, 4, 5].map(yearNum => {
                     const rate = cohort.rates[`Year ${yearNum}`];
+                    const colors = getRetentionColor(rate);
+                    const retentionYear = parseInt(cohort.cohortYear) + yearNum;
+
                     return (
-                      <td key={yearNum} className="px-4 py-3 text-sm">
+                      <div key={yearNum} className="w-24 px-1 py-1">
                         {rate !== undefined ? (
                           <button
                             onClick={() => handleRetentionCellClick(cohort.cohortYear, yearNum)}
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer hover:ring-2 hover:ring-indigo-400 transition-all ${
-                              rate >= 30 ? 'bg-emerald-100 text-emerald-800' :
-                              rate >= 20 ? 'bg-blue-100 text-blue-800' :
-                              rate >= 10 ? 'bg-amber-100 text-amber-800' :
-                              'bg-red-100 text-red-800'
-                            }`}
+                            className={`w-full h-12 ${colors.bg} ${colors.text} ${colors.border} border rounded flex flex-col items-center justify-center hover:ring-2 hover:ring-indigo-400 transition-all cursor-pointer group relative`}
+                            title={`${cohort.cohortYear} cohort: ${rate.toFixed(1)}% retained in ${retentionYear}`}
                           >
-                            {rate.toFixed(1)}%
+                            <span className="text-sm font-bold">{rate.toFixed(1)}%</span>
+                            {/* Tooltip on hover */}
+                            <div className="absolute bottom-full mb-2 hidden group-hover:block bg-slate-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-10">
+                              {cohort.cohortYear} cohort: {rate.toFixed(1)}% retained in Year {yearNum}
+                            </div>
                           </button>
                         ) : (
-                          <span className="text-slate-400">—</span>
+                          <div className={`w-full h-12 ${colors.bg} ${colors.text} ${colors.border} border rounded flex items-center justify-center`}>
+                            <span className="text-sm">—</span>
+                          </div>
                         )}
-                      </td>
+                      </div>
                     );
                   })}
-                </tr>
+                </div>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </div>
 
-        <div className="mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-4 text-xs">
-            <div className="flex items-center gap-2">
-              <span className="inline-block w-3 h-3 rounded-full bg-emerald-500"></span>
-              <span className="text-slate-600">≥30% retention</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="inline-block w-3 h-3 rounded-full bg-blue-500"></span>
-              <span className="text-slate-600">20-29%</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="inline-block w-3 h-3 rounded-full bg-amber-500"></span>
-              <span className="text-slate-600">10-19%</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="inline-block w-3 h-3 rounded-full bg-red-500"></span>
-              <span className="text-slate-600">&lt;10%</span>
+            {/* Color Legend */}
+            <div className="mt-4 flex flex-wrap items-center gap-4 text-xs border-t border-slate-200 pt-4">
+              <span className="font-semibold text-slate-700">Legend:</span>
+              <div className="flex items-center gap-2">
+                <span className="inline-block w-4 h-4 bg-emerald-600 rounded"></span>
+                <span className="text-slate-600">60%+ (Excellent)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="inline-block w-4 h-4 bg-emerald-400 rounded"></span>
+                <span className="text-slate-600">40-60% (Good)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="inline-block w-4 h-4 bg-yellow-300 rounded"></span>
+                <span className="text-slate-600">20-40% (Fair)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="inline-block w-4 h-4 bg-orange-300 rounded"></span>
+                <span className="text-slate-600">10-20% (Poor)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="inline-block w-4 h-4 bg-red-400 rounded"></span>
+                <span className="text-slate-600">&lt;10% (Critical)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="inline-block w-4 h-4 bg-slate-100 border border-slate-200 rounded"></span>
+                <span className="text-slate-600">No data</span>
+              </div>
             </div>
           </div>
-          <div className="text-xs text-slate-500 italic">
-            Click cohort years or retention percentages to view donor details
+        )}
+
+        {/* Table View */}
+        {retentionView === 'table' && (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-slate-200">
+              <thead>
+                <tr className="bg-slate-50">
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                    Cohort Year
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                    Donors Acquired
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                    Year 1
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                    Year 2
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                    Year 3
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                    Year 4
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                    Year 5
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-slate-200">
+                {cohortRetentionData.cohorts.map((cohort, index) => (
+                  <tr key={cohort.cohortYear} className={index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
+                    <td
+                      className="px-4 py-3 text-sm font-medium text-indigo-600 hover:text-indigo-800 cursor-pointer underline"
+                      onClick={() => handleCohortClick(cohort.cohortYear)}
+                    >
+                      {cohort.cohortYear}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-600">
+                      {cohort.acquired.toLocaleString()}
+                    </td>
+                    {[1, 2, 3, 4, 5].map(yearNum => {
+                      const rate = cohort.rates[`Year ${yearNum}`];
+                      return (
+                        <td key={yearNum} className="px-4 py-3 text-sm">
+                          {rate !== undefined ? (
+                            <button
+                              onClick={() => handleRetentionCellClick(cohort.cohortYear, yearNum)}
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer hover:ring-2 hover:ring-indigo-400 transition-all ${
+                                rate >= 30 ? 'bg-emerald-100 text-emerald-800' :
+                                rate >= 20 ? 'bg-blue-100 text-blue-800' :
+                                rate >= 10 ? 'bg-amber-100 text-amber-800' :
+                                'bg-red-100 text-red-800'
+                              }`}
+                            >
+                              {rate.toFixed(1)}%
+                            </button>
+                          ) : (
+                            <span className="text-slate-400">—</span>
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
+        )}
+
+        <div className="mt-4 text-xs text-slate-500 italic text-center">
+          Click cohort years or retention cells to view donor details
         </div>
       </div>
 

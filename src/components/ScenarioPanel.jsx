@@ -21,15 +21,17 @@ const ScenarioPanel = ({
   const [recurringPct, setRecurringPct] = useState(currentRecurringPct);
   const [hasChanges, setHasChanges] = useState(false);
   const [showMethodology, setShowMethodology] = useState(false);
+  const [lastRunValues, setLastRunValues] = useState(null);
 
-  // Update sliders when baseline changes
+  // Update sliders ONLY when baseline period changes, NOT after running scenarios
   React.useEffect(() => {
-    if (baseline) {
+    if (baseline && selectedPeriod !== lastRunValues?.period) {
       setRetention(baseline.currentRetention);
       setRecurringPct(baseline.currentRecurringPct);
       setHasChanges(false);
+      setLastRunValues({ period: selectedPeriod, retention: baseline.currentRetention, recurringPct: baseline.currentRecurringPct });
     }
-  }, [baseline]);
+  }, [baseline, selectedPeriod, lastRunValues]);
 
   const handleRetentionChange = useCallback((e) => {
     setRetention(Number(e.target.value));
@@ -48,9 +50,11 @@ const ScenarioPanel = ({
         recurringPct,
         timestamp: new Date().toISOString()
       });
+      // Keep sliders at their current positions - DON'T reset
+      setHasChanges(false); // Just mark that we've run with current values
+      setLastRunValues({ period: selectedPeriod, retention, recurringPct });
     }
-    setHasChanges(false);
-  }, [onRun, retention, recurringPct, baseline]);
+  }, [onRun, retention, recurringPct, baseline, selectedPeriod]);
 
   const handleReset = useCallback(() => {
     setRetention(currentRetention);
@@ -104,8 +108,8 @@ const ScenarioPanel = ({
           What-If Analysis
         </h3>
         <p className="text-sm text-slate-600 leading-relaxed">
-          Model how improvements to donor retention and recurring giving could affect future revenue.
-          Adjust the sliders below to see projected impact based on your historical giving patterns.
+          Model how improvements to donor retention and recurring giving could affect <span className="font-semibold">next year's revenue</span>.
+          Projections are based on patterns from your selected baseline period.
         </p>
       </header>
 
@@ -113,7 +117,7 @@ const ScenarioPanel = ({
         {/* Baseline Period Selector */}
         <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
           <label htmlFor="baseline-period" className="block text-sm font-medium text-slate-700 mb-2">
-            Baseline Period
+            Baseline Period (for pattern analysis)
           </label>
           <select
             id="baseline-period"
@@ -128,8 +132,11 @@ const ScenarioPanel = ({
             ))}
           </select>
           <p className="mt-2 text-xs text-slate-600">
-            <span className="font-medium">Baseline: {baseline.period} Revenue</span>
+            <span className="font-medium">Baseline patterns: {baseline.period}</span>
             {' '}— ${baseline.totalRevenue.toLocaleString()} from {baseline.donorCount.toLocaleString()} contactable donors
+          </p>
+          <p className="mt-1 text-xs text-slate-500 italic">
+            Projections will estimate <span className="font-semibold">next year's</span> revenue based on these patterns
           </p>
         </div>
 

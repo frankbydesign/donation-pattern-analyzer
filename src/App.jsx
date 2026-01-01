@@ -228,9 +228,9 @@ function App() {
                         <div className="chart-container bg-white rounded-lg border border-slate-200 shadow-sm">
                           {/* Header */}
                           <div className="px-6 pt-6 pb-4 border-b border-slate-100">
-                            <h3 className="text-lg font-semibold text-slate-900">Projected Impact</h3>
+                            <h3 className="text-lg font-semibold text-slate-900">Projected Impact on Next Year's Revenue</h3>
                             <p className="text-xs text-slate-500 mt-1">
-                              Based on {baselineMetrics?.period} baseline
+                              Based on {baselineMetrics?.period} patterns
                             </p>
                           </div>
 
@@ -256,7 +256,7 @@ function App() {
                               {scenarioResults.details?.retention && (
                                 <p className="text-xs text-emerald-800 leading-relaxed">
                                   Retaining <span className="font-semibold">{Math.abs(scenarioResults.details.retention.additionalDonors)} additional donors</span>
-                                  {' '}at their average gift of ${scenarioResults.details.retention.avgGift.toFixed(0)} would add this revenue.
+                                  {' '}at their average gift of ${scenarioResults.details.retention.avgGift.toFixed(0)} would add this to <span className="font-semibold">next year's</span> revenue.
                                 </p>
                               )}
                             </div>
@@ -274,7 +274,7 @@ function App() {
                               {scenarioResults.details?.recurring && (
                                 <p className="text-xs text-blue-800 leading-relaxed">
                                   Converting <span className="font-semibold">{Math.abs(scenarioResults.details.recurring.additionalDonors)} donors</span>
-                                  {' '}to monthly giving at average of ${scenarioResults.details.recurring.avgMonthlyGift.toFixed(0)}/month adds this annually.
+                                  {' '}to monthly giving at average of ${scenarioResults.details.recurring.avgMonthlyGift.toFixed(0)}/month would add this to <span className="font-semibold">next year's annual</span> revenue.
                                 </p>
                               )}
                             </div>

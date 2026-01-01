@@ -160,13 +160,27 @@ const DonorHealth = () => {
 
     // Count at-risk donors in the filtered set
     let atRiskCount = 0;
+    let usingRFMFallback = false;
+
     if (layer2.lapse_risk_analysis?.individual_risks) {
+      // Prefer lapse risk data if available
       atRiskCount = Object.entries(layer2.lapse_risk_analysis.individual_risks)
         .filter(([donorId, riskData]) => {
           const isInFilteredSet = filteredContactableIds.has(donorId);
           const isHighRisk = riskData.risk_level?.toLowerCase() === 'high' ||
                             riskData.risk_level?.toLowerCase() === 'medium';
           return isInFilteredSet && isHighRisk;
+        })
+        .length;
+    } else if (layer2.rfm_analysis?.scores) {
+      // Fallback to RFM "At Risk" segment if lapse risk data is missing
+      usingRFMFallback = true;
+      atRiskCount = Object.entries(layer2.rfm_analysis.scores)
+        .filter(([donorId, score]) => {
+          const isInFilteredSet = filteredContactableIds.has(donorId);
+          const total = score.rfm_total || 0;
+          const isAtRisk = total >= 6 && total < 9; // At Risk (2-3 range) in RFM
+          return isInFilteredSet && isAtRisk;
         })
         .length;
     }
@@ -182,7 +196,8 @@ const DonorHealth = () => {
       activeCount: activeContactable,
       totalDonors: totalContactableDonors,
       allTimeContactable,
-      isFiltered
+      isFiltered,
+      usingRFMFallback
     };
   }, [layer2, getFilteredDonors, getAllDonors, filters]);
 
@@ -290,7 +305,12 @@ const DonorHealth = () => {
         <div className="bg-white rounded-lg border border-slate-200 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-slate-600">Donors at Risk</p>
+              <p className="text-sm font-medium text-slate-600">
+                Donors at Risk
+                {healthMetrics.usingRFMFallback && (
+                  <span className="ml-1 text-xs text-slate-400">(RFM-based)</span>
+                )}
+              </p>
               <p className="text-3xl font-bold text-amber-600 mt-2">
                 {healthMetrics.atRiskCount.toLocaleString()}
               </p>
@@ -426,8 +446,17 @@ const DonorHealth = () => {
                 </div>
               </div>
             ) : (
-              <div className="flex items-center justify-center h-[300px] text-slate-400">
-                <p>No lapse risk data available</p>
+              <div className="flex flex-col items-center justify-center h-[300px] text-slate-400 p-6">
+                <svg className="w-16 h-16 text-slate-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <p className="font-medium text-slate-600 mb-2">Lapse Risk Data Not Available</p>
+                <p className="text-xs text-slate-500 text-center max-w-md">
+                  Lapse risk analysis requires historical donor data. This data may not be available yet or may need to be generated from your donor database.
+                </p>
+                <p className="text-xs text-slate-400 text-center mt-2 max-w-md">
+                  In the meantime, refer to the RFM segment distribution above for donor health insights.
+                </p>
               </div>
             )}
           </ChartCard>

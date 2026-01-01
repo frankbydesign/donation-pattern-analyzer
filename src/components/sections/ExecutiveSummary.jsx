@@ -68,6 +68,102 @@ const ExecutiveSummary = () => {
     };
   }, [layer1, layer2, getFilteredDonors, getAllDonors, filters]);
 
+  // Helper function to determine filter type and calculate YoY comparison
+  const calculateYoYComparison = useMemo(() => {
+    if (!filters.dateRange) {
+      // All Time: Compare most recent complete calendar year vs prior year
+      const allDonors = getAllDonors();
+      const currentYear = new Date().getFullYear();
+      const lastCompleteYear = currentYear - 1;
+      const priorYear = lastCompleteYear - 1;
+
+      const getYearRevenue = (year) => {
+        return allDonors.reduce((sum, donor) => {
+          const yearGifts = donor.gifts?.filter(gift => {
+            const giftYear = new Date(gift.date).getFullYear();
+            return giftYear === year;
+          }) || [];
+          return sum + yearGifts.reduce((giftSum, gift) => giftSum + gift.amount, 0);
+        }, 0);
+      };
+
+      const lastYearRevenue = getYearRevenue(lastCompleteYear);
+      const priorYearRevenue = getYearRevenue(priorYear);
+
+      return {
+        type: 'all_time',
+        currentRevenue: lastYearRevenue,
+        priorRevenue: priorYearRevenue,
+        currentLabel: lastCompleteYear.toString(),
+        priorLabel: priorYear.toString(),
+        label: 'year-over-year'
+      };
+    }
+
+    const { start, end } = filters.dateRange;
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+
+    // Check if it's a calendar year (e.g., 2024-01-01 to 2024-12-31)
+    if (start.match(/^\d{4}-01-01$/) && end.match(/^\d{4}-12-31$/)) {
+      const currentYear = parseInt(start.substring(0, 4));
+      const priorYear = currentYear - 1;
+
+      const allDonors = getAllDonors();
+      const getYearRevenue = (year) => {
+        return allDonors.reduce((sum, donor) => {
+          const yearGifts = donor.gifts?.filter(gift => {
+            const giftYear = new Date(gift.date).getFullYear();
+            return giftYear === year;
+          }) || [];
+          return sum + yearGifts.reduce((giftSum, gift) => giftSum + gift.amount, 0);
+        }, 0);
+      };
+
+      return {
+        type: 'calendar_year',
+        currentRevenue: getYearRevenue(currentYear),
+        priorRevenue: getYearRevenue(priorYear),
+        currentLabel: currentYear.toString(),
+        priorLabel: priorYear.toString(),
+        label: 'year-over-year'
+      };
+    }
+
+    // Rolling period: Calculate equivalent prior period
+    const periodDays = Math.round((endDate - startDate) / (1000 * 60 * 60 * 24));
+    const priorStartDate = new Date(startDate);
+    priorStartDate.setDate(priorStartDate.getDate() - periodDays - 1);
+    const priorEndDate = new Date(endDate);
+    priorEndDate.setDate(priorEndDate.getDate() - periodDays - 1);
+
+    const allDonors = getAllDonors();
+    const getPeriodRevenue = (rangeStart, rangeEnd) => {
+      return allDonors.reduce((sum, donor) => {
+        const periodGifts = donor.gifts?.filter(gift => {
+          const giftDate = new Date(gift.date);
+          return giftDate >= rangeStart && giftDate <= rangeEnd;
+        }) || [];
+        return sum + periodGifts.reduce((giftSum, gift) => giftSum + gift.amount, 0);
+      }, 0);
+    };
+
+    const currentRevenue = getPeriodRevenue(startDate, endDate);
+    const priorRevenue = getPeriodRevenue(priorStartDate, priorEndDate);
+
+    const monthsDiff = Math.round(periodDays / 30);
+    const periodLabel = monthsDiff >= 12 ? `${monthsDiff}-month period` : 'selected period';
+
+    return {
+      type: 'rolling',
+      currentRevenue,
+      priorRevenue,
+      currentLabel: `${start} to ${end}`,
+      priorLabel: `${priorStartDate.toISOString().split('T')[0]} to ${priorEndDate.toISOString().split('T')[0]}`,
+      label: `vs. prior ${periodLabel}`
+    };
+  }, [filters, getAllDonors]);
+
   // Generate actionable insights based on data
   const insights = useMemo(() => {
     if (!layer1 || !layer2 || !metrics) return [];
@@ -140,31 +236,29 @@ const ExecutiveSummary = () => {
       .reduce((sum, [, amount]) => sum + amount, 0);
     const decemberPct = metrics.totalRevenue > 0 ? (decemberRevenue / metrics.totalRevenue) * 100 : 0;
 
-    // Calculate YoY revenue growth from filtered data
-    const revenueByYear = {};
-    filteredDonors.forEach(donor => {
-      donor.gifts?.forEach(gift => {
-        const year = new Date(gift.date).getFullYear();
-        revenueByYear[year] = (revenueByYear[year] || 0) + gift.amount;
-      });
-    });
-    const years = Object.keys(revenueByYear).sort();
+    // Calculate YoY revenue growth using the appropriate comparison
+    const yoyComparison = calculateYoYComparison;
     let yoyGrowth = 0;
-    if (years.length >= 2) {
-      const lastYear = revenueByYear[years[years.length - 1]];
-      const prevYear = revenueByYear[years[years.length - 2]];
-      yoyGrowth = prevYear > 0 ? ((lastYear - prevYear) / prevYear) * 100 : 0;
+    let yoyLabel = '';
+    let hasValidYoY = false;
+
+    if (yoyComparison.priorRevenue > 0) {
+      yoyGrowth = ((yoyComparison.currentRevenue - yoyComparison.priorRevenue) / yoyComparison.priorRevenue) * 100;
+      yoyLabel = yoyComparison.label;
+
+      // Sanity check: If percentage exceeds ±500%, flag as data anomaly
+      hasValidYoY = Math.abs(yoyGrowth) <= 500;
     }
 
     // RED (Critical) Insights
-    if (retentionRate < 40) {
+    if (retentionRate < 35) {
       const comparison = metrics.isFiltered && Math.abs(retentionRate - allTimeRetention) > 2
         ? ` (vs. ${allTimeRetention.toFixed(1)}% all-time)`
         : '';
       generatedInsights.push({
         severity: 'critical',
-        finding: `Retention rate: ${retentionRate.toFixed(1)}%${comparison} is significantly below sector benchmark (40-45%).`,
-        action: 'Consider focusing on repeat donation strategies such as thank-you calls within 48 hours of first gift, monthly giving program promotion, or personalized impact updates to recent donors.',
+        finding: `Retention rate: ${retentionRate.toFixed(1)}%${comparison} is critically low (sector benchmark: 40-45%).`,
+        action: 'Urgent: Implement thank-you calls within 48 hours of first gift, launch a monthly giving program, and send personalized impact updates to recent donors.',
         priority: 1
       });
     }
@@ -178,8 +272,35 @@ const ExecutiveSummary = () => {
       });
     }
 
+    if (lapseRiskPct > 40) {
+      generatedInsights.push({
+        severity: 'critical',
+        finding: `${highRiskCount} donors (${lapseRiskPct.toFixed(1)}% of contactable base) at high lapse risk.`,
+        action: 'Critical: These donors gave consistently before but have gone quiet. Launch immediate personalized reactivation campaign—phone calls, not email.',
+        priority: 1
+      });
+    }
+
     // YELLOW (Warning) Insights
-    if (lapseRiskPct > 30) {
+    if (retentionRate >= 35 && retentionRate < 45) {
+      generatedInsights.push({
+        severity: 'warning',
+        finding: `Retention rate: ${retentionRate.toFixed(1)}% is below sector benchmark (40-45%).`,
+        action: 'Focus on repeat donation strategies: thank-you calls, monthly giving program promotion, and personalized impact updates.',
+        priority: 2
+      });
+    }
+
+    if (concentrationPct > 30 && concentrationPct <= 50) {
+      generatedInsights.push({
+        severity: 'warning',
+        finding: `Top 10 donors account for ${concentrationPct.toFixed(1)}% of total revenue.`,
+        action: 'Consider diversifying your donor base by cultivating mid-level donors ($500-$1,000) to reduce concentration risk.',
+        priority: 2
+      });
+    }
+
+    if (lapseRiskPct > 25 && lapseRiskPct <= 40) {
       generatedInsights.push({
         severity: 'warning',
         finding: `${highRiskCount} donors (${lapseRiskPct.toFixed(1)}% of contactable base) show elevated lapse risk.`,
@@ -198,22 +319,44 @@ const ExecutiveSummary = () => {
     }
 
     // GREEN (Positive) Insights
-    if (yoyGrowth > 0) {
-      const donorChange = years.length >= 2 ?
-        ((layer1.donors?.length || 0) - (layer1.donors?.filter(d => d.first_gift && new Date(d.first_gift).getFullYear() >= parseInt(years[years.length - 2])).length || 0)) : 0;
-
-      let context = '';
-      if (donorChange < 0) {
-        context = ' despite donor decline';
-      } else if (metrics.avgGiftSize > 100) {
-        context = ', driven by increased average gift size';
-      }
-
+    if (retentionRate >= 45) {
       generatedInsights.push({
         severity: 'positive',
-        finding: `Revenue grew ${yoyGrowth.toFixed(1)}% year-over-year${context}.`,
+        finding: `Retention rate: ${retentionRate.toFixed(1)}% exceeds sector benchmark (40-45%).`,
+        action: 'Strong donor retention! Continue current stewardship practices and document what\'s working for future scaling.',
+        priority: 3
+      });
+    }
+
+    if (hasValidYoY && yoyGrowth > 0) {
+      generatedInsights.push({
+        severity: 'positive',
+        finding: `Revenue grew ${yoyGrowth.toFixed(1)}% ${yoyLabel} (${yoyComparison.currentLabel} vs. ${yoyComparison.priorLabel}).`,
         action: 'Continue monitoring trends and donor engagement strategies that are working.',
         priority: 3
+      });
+    }
+
+    // YELLOW (Warning) - Significant YoY Decline
+    if (hasValidYoY && yoyGrowth < -10) {
+      generatedInsights.push({
+        severity: 'warning',
+        finding: `Revenue declined ${Math.abs(yoyGrowth).toFixed(1)}% ${yoyLabel} (${yoyComparison.currentLabel} vs. ${yoyComparison.priorLabel}).`,
+        action: 'Investigate causes of revenue decline. Review donor retention rates and major gift patterns from the prior period.',
+        priority: 2
+      });
+    }
+
+    // Handle insufficient data
+    if (!hasValidYoY && yoyComparison.priorRevenue === 0) {
+      // Don't show an insight - just skip it
+    } else if (!hasValidYoY) {
+      // Data anomaly (>500% growth)
+      generatedInsights.push({
+        severity: 'warning',
+        finding: `Data anomaly detected in ${yoyLabel} comparison. Extreme variance suggests data quality issue.`,
+        action: 'Review data for the periods being compared to ensure accuracy and completeness.',
+        priority: 2
       });
     }
 
@@ -227,11 +370,10 @@ const ExecutiveSummary = () => {
       });
     }
 
-    // Sort by priority and limit to 5
+    // Sort by priority (no limit - show all relevant insights)
     return generatedInsights
-      .sort((a, b) => a.priority - b.priority)
-      .slice(0, 5);
-  }, [layer1, layer2, metrics, getFilteredDonors, getAllDonors]);
+      .sort((a, b) => a.priority - b.priority);
+  }, [layer1, layer2, metrics, getFilteredDonors, getAllDonors, calculateYoYComparison]);
 
   // Prepare donor segment distribution data for doughnut chart
   const segmentChartData = useMemo(() => {
