@@ -12,8 +12,12 @@ import AccessibilityPanel, {
   SkipLink,
   HighContrastToggle
 } from './components/Accessibility';
-import ExecutiveSummary from './components/sections/ExecutiveSummary';
-import DonorHealth from './components/sections/DonorHealth';
+import {
+  ExecutiveSummary,
+  DonorHealth,
+  GivingPatterns,
+  TemporalTrends
+} from './components/sections';
 
 // Hooks
 import useDataLoader from './hooks/useDataLoader';
@@ -93,6 +97,7 @@ function App() {
                 { id: 'executive', label: 'Executive Summary' },
                 { id: 'health', label: 'Donor Health' },
                 { id: 'patterns', label: 'Giving Patterns' },
+                { id: 'trends', label: 'Temporal Trends' },
                 { id: 'scenarios', label: 'What-If Analysis' }
               ].map((tab) => (
                 <button
@@ -155,15 +160,9 @@ function App() {
 
               {activeTab === 'health' && <DonorHealth />}
 
-              {activeTab === 'patterns' && (
-                <div className="bg-slate-50 border-2 border-dashed border-slate-300 rounded-lg p-12 text-center">
-                  <svg className="w-16 h-16 mx-auto mb-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
-                  <h3 className="text-lg font-semibold text-slate-700 mb-2">Giving Patterns</h3>
-                  <p className="text-slate-500">This section is coming soon.</p>
-                </div>
-              )}
+              {activeTab === 'patterns' && <GivingPatterns />}
+
+              {activeTab === 'trends' && <TemporalTrends />}
 
               {activeTab === 'scenarios' && (
                 <div className="space-y-6">
