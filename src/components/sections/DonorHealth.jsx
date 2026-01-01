@@ -85,8 +85,6 @@ const DonorHealth = () => {
   // Prepare lapse risk breakdown data
   // Use filtered donors and exclude anonymous donors from lapse risk analysis
   const lapseRiskData = useMemo(() => {
-    if (!layer2?.lapse_risk_analysis?.individual_risks) return null;
-
     const filteredDonors = getFilteredDonors();
     if (!filteredDonors || filteredDonors.length === 0) return null;
 
@@ -100,15 +98,46 @@ const DonorHealth = () => {
     // Recalculate risk distribution for filtered contactable donors only
     const riskCounts = { low: 0, medium: 0, high: 0 };
 
-    Object.entries(layer2.lapse_risk_analysis.individual_risks).forEach(([donorId, riskData]) => {
-      // Only include donors in the filtered set
-      if (!filteredDonorIds.has(donorId)) return;
+    // Try to use layer2 data first
+    if (layer2?.lapse_risk_analysis?.individual_risks) {
+      Object.entries(layer2.lapse_risk_analysis.individual_risks).forEach(([donorId, riskData]) => {
+        // Only include donors in the filtered set
+        if (!filteredDonorIds.has(donorId)) return;
 
-      const riskLevel = riskData.risk_level?.toLowerCase();
-      if (riskLevel === 'low') riskCounts.low++;
-      else if (riskLevel === 'medium') riskCounts.medium++;
-      else if (riskLevel === 'high') riskCounts.high++;
-    });
+        const riskLevel = riskData.risk_level?.toLowerCase();
+        if (riskLevel === 'low') riskCounts.low++;
+        else if (riskLevel === 'medium') riskCounts.medium++;
+        else if (riskLevel === 'high') riskCounts.high++;
+      });
+    } else if (layer1) {
+      // Fallback: Calculate lapse risk from layer1 data based on recency
+      const today = new Date();
+      const contactableDonors = filteredDonors.filter(donor => donor.is_anonymous !== true);
+
+      contactableDonors.forEach(donor => {
+        if (!donor.last_gift) {
+          riskCounts.high++;
+          return;
+        }
+
+        const lastGiftDate = new Date(donor.last_gift);
+        const daysSinceLastGift = Math.floor((today - lastGiftDate) / (1000 * 60 * 60 * 24));
+
+        // Risk classification based on recency:
+        // Low: gave in last 6 months (180 days)
+        // Medium: gave 6-12 months ago (181-365 days)
+        // High: gave over 12 months ago (365+ days)
+        if (daysSinceLastGift <= 180) {
+          riskCounts.low++;
+        } else if (daysSinceLastGift <= 365) {
+          riskCounts.medium++;
+        } else {
+          riskCounts.high++;
+        }
+      });
+    } else {
+      return null;
+    }
 
     return {
       labels: ['Low Risk', 'Medium Risk', 'High Risk'],
@@ -126,7 +155,7 @@ const DonorHealth = () => {
         borderWidth: 0,
       }],
     };
-  }, [layer2, getFilteredDonors]);
+  }, [layer1, layer2, getFilteredDonors]);
 
   // Calculate key health metrics from filtered data
   // Exclude anonymous donors from relationship-based metrics
