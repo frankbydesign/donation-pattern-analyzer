@@ -53,6 +53,53 @@ The visualization uses anonymized donation data from an actual nonprofit organiz
 
 [View the tool](https://frankbydesign.github.io/donation-pattern-analyzer/)
 
+## Dashboard Features
+
+The dashboard includes four comprehensive sections:
+
+- **Executive Summary** — Key metrics overview including total donors, revenue, average gift size, donor segment distribution, and revenue trends
+- **Donor Health** — RFM segment analysis, retention rates, lapse risk distribution, and at-risk donor identification
+- **Giving Patterns** — Monthly trends, day-of-week patterns, gift amount distribution, and peak giving insights
+- **Temporal Trends** — Year-over-year donor counts, new vs returning donors, cohort retention analysis
+- **What-If Analysis** — Interactive scenario modeling to project impact of changes in retention and recurring giving rates
+
+## Local Development
+
+### Prerequisites
+- Node.js (v16 or higher)
+- npm
+
+### Running Locally
+
+```bash
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+```
+
+The app will be available at `http://localhost:3000/donation-pattern-analyzer/`
+
+### Building for Production
+
+```bash
+# Build the app
+npm run build
+
+# Preview production build
+npm run preview
+```
+
+## Deployment
+
+This project is configured to deploy to GitHub Pages:
+
+- The production build is generated in the `dist/` directory
+- Data files from `public/data/` are automatically copied to the build
+- The site is deployed to `https://frankbydesign.github.io/donation-pattern-analyzer/`
+- Deployment is handled via GitHub Actions on push to the main branch
+
 ## Author
 
 Frank Brockmann  
