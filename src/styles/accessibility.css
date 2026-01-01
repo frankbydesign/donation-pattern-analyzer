@@ -159,6 +159,21 @@ html.high-contrast canvas {
   filter: contrast(1.2);
 }
 
+/* High contrast glossary cards - ensure consistent hover states */
+html.high-contrast .glossary-card,
+html.high-contrast [role="dialog"] button {
+  background: #FFFFFF;
+  color: #000000;
+  border: 2px solid #000000;
+}
+
+html.high-contrast .glossary-card:hover,
+html.high-contrast [role="dialog"] button:hover {
+  background: #000000 !important;
+  color: #FFFFFF !important;
+  border-color: #000000 !important;
+}
+
 /* ==========================================
    Reduced Motion
    ========================================== */
