@@ -372,23 +372,65 @@ const useDataStore = create((set, get) => ({
   getDonorsByLapseRisk: (riskLevel) => {
     const { layer1, layer2, getFilteredDonors } = get();
 
-    if (!layer1?.donors || !layer2?.lapse_risk_analysis?.individual_risks) {
+    if (!layer1?.donors) {
       return [];
     }
 
     const filteredDonors = getFilteredDonors();
     const contactableDonors = filteredDonors.filter(donor => donor.is_anonymous !== true);
 
-    // Map risk data to donors
-    return contactableDonors.map(donor => {
-      const riskData = layer2.lapse_risk_analysis.individual_risks[donor.donor_id];
-      return {
-        ...donor,
-        risk_data: riskData
-      };
-    }).filter(donor => {
-      return donor.risk_data?.risk_level?.toLowerCase() === riskLevel.toLowerCase();
-    });
+    // APPROACH 1: Use individual_risks from layer2 if available
+    if (layer2?.lapse_risk_analysis?.individual_risks) {
+      return contactableDonors.map(donor => {
+        const riskData = layer2.lapse_risk_analysis.individual_risks[donor.donor_id];
+        return {
+          ...donor,
+          risk_data: riskData
+        };
+      }).filter(donor => {
+        return donor.risk_data?.risk_level?.toLowerCase() === riskLevel.toLowerCase();
+      });
+    }
+
+    // APPROACH 2: Fallback - calculate risk from donor behavior patterns
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
+    const twoYearsAgo = new Date();
+    twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
+
+    return contactableDonors.filter(donor => {
+      const lastGiftDate = donor.last_gift ? new Date(donor.last_gift) : null;
+      const giftCount = donor.gifts?.length || 0;
+
+      if (!lastGiftDate) {
+        // No gift history = high risk
+        return riskLevel.toLowerCase() === 'high';
+      }
+
+      // High risk: Haven't given in 1+ year but gave before
+      if (lastGiftDate < oneYearAgo && giftCount >= 2) {
+        return riskLevel.toLowerCase() === 'high';
+      }
+      // Medium risk: Haven't given in 6-12 months
+      else if (lastGiftDate < oneYearAgo && lastGiftDate >= twoYearsAgo) {
+        return riskLevel.toLowerCase() === 'medium';
+      }
+      // Low risk: Gave recently (within 1 year)
+      else if (lastGiftDate >= oneYearAgo) {
+        return riskLevel.toLowerCase() === 'low';
+      }
+      // High risk: Inactive for 2+ years
+      else {
+        return riskLevel.toLowerCase() === 'high';
+      }
+    }).map(donor => ({
+      ...donor,
+      risk_data: {
+        risk_level: riskLevel,
+        calculated: true  // Flag to indicate this was calculated, not from layer2
+      }
+    }));
   },
 
   /**
