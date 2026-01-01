@@ -455,6 +455,11 @@ const DonorHealth = () => {
                   height={300}
                   options={{
                     indexAxis: 'y',
+                    plugins: {
+                      tooltip: {
+                        enabled: false  // Disable tooltip since labels already show counts
+                      }
+                    },
                     scales: {
                       x: {
                         ticks: {
