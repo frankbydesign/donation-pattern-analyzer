@@ -16,7 +16,8 @@ import {
   ExecutiveSummary,
   DonorHealth,
   GivingPatterns,
-  TemporalTrends
+  TemporalTrends,
+  ConcentrationRisk
 } from './components/sections';
 import { DateRangeFilter, FilterStatus } from './components/filters';
 import { DonorListPanel } from './components/panels';
@@ -138,6 +139,7 @@ function App() {
             <div className="flex gap-1" role="tablist">
               {[
                 { id: 'executive', label: 'Executive Summary' },
+                { id: 'concentration', label: 'Concentration Risk' },
                 { id: 'health', label: 'Donor Health' },
                 { id: 'patterns', label: 'Giving Patterns' },
                 { id: 'trends', label: 'Temporal Trends' },
@@ -200,6 +202,8 @@ function App() {
             <>
               {/* Tab Content */}
               {activeTab === 'executive' && <ExecutiveSummary />}
+
+              {activeTab === 'concentration' && <ConcentrationRisk />}
 
               {activeTab === 'health' && <DonorHealth />}
 
