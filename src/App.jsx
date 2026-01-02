@@ -165,29 +165,31 @@ function App() {
         {/* Navigation Tabs */}
         <nav className="bg-white border-b border-slate-200 px-6" aria-label="Dashboard navigation">
           <div className="max-w-7xl mx-auto">
-            <div className="flex gap-1 overflow-x-auto" role="tablist">
-              {[
-                { id: 'executive', label: 'Executive Summary' },
-                { id: 'concentration', label: 'Concentration Risk' },
-                { id: 'health', label: 'Donor Health' },
-                { id: 'patterns', label: 'Giving Patterns' },
-                { id: 'trends', label: 'Temporal Trends' },
-                { id: 'scenarios', label: 'What-If Analysis' }
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
-                    activeTab === tab.id
-                      ? 'border-indigo-600 text-indigo-600'
-                      : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
-                  }`}
-                  aria-selected={activeTab === tab.id}
-                  role="tab"
-                >
-                  {tab.label}
-                </button>
-              ))}
+            <div className="overflow-x-auto">
+              <div className="flex gap-1 min-w-max" role="tablist">
+                {[
+                  { id: 'executive', label: 'Executive Summary' },
+                  { id: 'concentration', label: 'Concentration Risk' },
+                  { id: 'health', label: 'Donor Health' },
+                  { id: 'patterns', label: 'Giving Patterns' },
+                  { id: 'trends', label: 'Temporal Trends' },
+                  { id: 'scenarios', label: 'What-If Analysis' }
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex-shrink-0 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                      activeTab === tab.id
+                        ? 'border-indigo-600 text-indigo-600'
+                        : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
+                    }`}
+                    aria-selected={activeTab === tab.id}
+                    role="tab"
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </nav>
