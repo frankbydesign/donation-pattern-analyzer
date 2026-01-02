@@ -33,12 +33,8 @@ import { calculateBaselineMetrics, calculateScenarioImpact } from './utils/scena
  * Helps nonprofits understand donor behavior and make data-driven decisions
  */
 function App() {
-  console.log('[APP] Component render started');
-
   // Load donor data
   const { isLoading, error, data } = useDataLoader();
-
-  console.log('[APP] After useDataLoader:', { isLoading, error, hasData: !!data });
 
   const [isGlossaryOpen, setIsGlossaryOpen] = useState(false);
   const [isA11yPanelOpen, setIsA11yPanelOpen] = useState(false);
@@ -47,13 +43,7 @@ function App() {
   const [baselinePeriod, setBaselinePeriod] = useState('last_year');
 
   // Calculate latest gift date from data
-  console.log('[APP] Before latestDataDate useMemo');
   const latestDataDate = React.useMemo(() => {
-    console.log('[APP] Inside latestDataDate useMemo, data:', {
-      hasData: !!data,
-      hasLayer1: !!data?.layer1,
-      hasDonors: !!data?.layer1?.donors
-    });
     if (!data?.layer1?.donors) return null;
 
     let latestDate = null;
@@ -71,19 +61,10 @@ function App() {
   }, [data]);
 
   // Calculate baseline metrics from actual data
-  console.log('[APP] Before baselineMetrics useMemo');
   const baselineMetrics = React.useMemo(() => {
-    console.log('[APP] Inside baselineMetrics useMemo, data:', {
-      hasData: !!data,
-      hasLayer1: !!data?.layer1,
-      hasLayer2: !!data?.layer2,
-      baselinePeriod
-    });
     if (!data?.layer1 || !data?.layer2) return null;
 
-    console.log('[APP] About to call calculateBaselineMetrics');
     const result = calculateBaselineMetrics(data.layer1, data.layer2, baselinePeriod);
-    console.log('[APP] calculateBaselineMetrics result:', result);
     return result;
   }, [data, baselinePeriod]);
 
@@ -109,14 +90,6 @@ function App() {
     // Clear scenario results when period changes
     setScenarioResults(null);
   };
-
-  console.log('[APP] Before return, state:', {
-    isLoading,
-    hasError: !!error,
-    hasData: !!data,
-    activeTab,
-    hasBaselineMetrics: !!baselineMetrics
-  });
 
   return (
     <AccessibilityProvider>
@@ -233,38 +206,23 @@ function App() {
             <>
               {/* Tab Content */}
               {activeTab === 'executive' && (
-                <>
-                  {console.log('[APP] Rendering ExecutiveSummary')}
-                  <ExecutiveSummary />
-                </>
+                <ExecutiveSummary />
               )}
 
               {activeTab === 'concentration' && (
-                <>
-                  {console.log('[APP] Rendering ConcentrationRisk')}
-                  <ConcentrationRisk />
-                </>
+                <ConcentrationRisk />
               )}
 
               {activeTab === 'health' && (
-                <>
-                  {console.log('[APP] Rendering DonorHealth')}
-                  <DonorHealth />
-                </>
+                <DonorHealth />
               )}
 
               {activeTab === 'patterns' && (
-                <>
-                  {console.log('[APP] Rendering GivingPatterns')}
-                  <GivingPatterns />
-                </>
+                <GivingPatterns />
               )}
 
               {activeTab === 'trends' && (
-                <>
-                  {console.log('[APP] Rendering TemporalTrends')}
-                  <TemporalTrends />
-                </>
+                <TemporalTrends />
               )}
 
               {activeTab === 'scenarios' && (
