@@ -9,8 +9,6 @@ import { FilterStatus } from '../filters';
  * Shows total donors, revenue, average gift size, segment distribution, and revenue trends
  */
 const ExecutiveSummary = () => {
-  console.log('[EXEC_SUMMARY] Component render started');
-
   const {
     layer1,
     layer2,
@@ -24,32 +22,16 @@ const ExecutiveSummary = () => {
     getDateRangeLabel
   } = useDataStore();
 
-  console.log('[EXEC_SUMMARY] After useDataStore:', {
-    hasLayer1: !!layer1,
-    hasLayer2: !!layer2,
-    isLoading,
-    filters
-  });
-
   // Calculate metrics for both filtered and all-time data
-  console.log('[EXEC_SUMMARY] Before metrics useMemo');
   const metrics = useMemo(() => {
-    console.log('[EXEC_SUMMARY] Inside metrics useMemo');
     if (!layer1 || !layer2) {
-      console.log('[EXEC_SUMMARY] metrics useMemo: no layer1 or layer2');
       return null;
     }
 
-    console.log('[EXEC_SUMMARY] About to call getFilteredDonors');
     const filteredDonors = getFilteredDonors();
-    console.log('[EXEC_SUMMARY] filteredDonors count:', filteredDonors?.length);
-
-    console.log('[EXEC_SUMMARY] About to call getAllDonors');
     const allDonors = getAllDonors();
-    console.log('[EXEC_SUMMARY] allDonors count:', allDonors?.length);
 
     const isFiltered = filters.dateRange !== null;
-    console.log('[EXEC_SUMMARY] isFiltered:', isFiltered);
 
     // Calculate filtered metrics
     const totalDonors = filteredDonors.length;
@@ -186,18 +168,13 @@ const ExecutiveSummary = () => {
   }, [filters, getAllDonors]);
 
   // Generate actionable insights based on data
-  console.log('[EXEC_SUMMARY] Before insights useMemo');
   const insights = useMemo(() => {
-    console.log('[EXEC_SUMMARY] Inside insights useMemo, hasMetrics:', !!metrics);
     if (!layer1 || !layer2 || !metrics) {
-      console.log('[EXEC_SUMMARY] insights useMemo: missing data');
       return [];
     }
 
-    console.log('[EXEC_SUMMARY] Starting insights calculation');
     const generatedInsights = [];
     const filteredDonors = getFilteredDonors();
-    console.log('[EXEC_SUMMARY] insights: filteredDonors count:', filteredDonors?.length);
 
     // Calculate retention rate: donors from prior period who also gave in current period
     // This is the TRUE retention calculation (prior -> current, not just "active")
@@ -472,7 +449,6 @@ const ExecutiveSummary = () => {
     }
 
     // Sort by priority (no limit - show all relevant insights)
-    console.log('[EXEC_SUMMARY] insights: returning', generatedInsights.length, 'insights');
     return generatedInsights
       .sort((a, b) => a.priority - b.priority);
   }, [layer1, layer2, metrics, getFilteredDonors, getAllDonors, calculateYoYComparison]);
@@ -540,15 +516,7 @@ const ExecutiveSummary = () => {
     };
   }, [filters, getFilteredDonors]);
 
-  console.log('[EXEC_SUMMARY] Before render checks:', {
-    isLoading,
-    hasMetrics: !!metrics,
-    hasSegmentChartData: !!segmentChartData,
-    hasInsights: !!insights
-  });
-
   if (isLoading) {
-    console.log('[EXEC_SUMMARY] Rendering loading state');
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
@@ -560,15 +528,12 @@ const ExecutiveSummary = () => {
   }
 
   if (!metrics || !segmentChartData) {
-    console.log('[EXEC_SUMMARY] Rendering error state - missing data');
     return (
       <div className="bg-amber-50 border border-amber-200 rounded-lg p-6">
         <p className="text-amber-800">Unable to load executive summary data.</p>
       </div>
     );
   }
-
-  console.log('[EXEC_SUMMARY] About to render main content');
 
   // Handle empty filter results
   if (metrics.isFiltered && metrics.totalDonors === 0) {

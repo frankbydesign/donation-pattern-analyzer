@@ -25,15 +25,12 @@ const DonorHealth = () => {
   // Calculate RFM segment distribution from individual donor scores
   // Use filtered donors and exclude anonymous donors from RFM segmentation
   const rfmSegmentData = useMemo(() => {
-    console.log('[RFM] Starting RFM segment calculation');
     if (!layer2?.rfm_analysis?.scores) {
-      console.log('[RFM] No RFM scores available in layer2');
       return null;
     }
 
     const filteredDonors = getFilteredDonors();
     if (!filteredDonors || filteredDonors.length === 0) {
-      console.log('[RFM] No filtered donors available');
       return null;
     }
 
@@ -43,7 +40,6 @@ const DonorHealth = () => {
         .filter(donor => donor.is_anonymous !== true)
         .map(donor => donor.donor_id)
     );
-    console.log('[RFM] Filtered contactable donor count:', filteredDonorIds.size);
 
     // Count donors by RFM segment, only for filtered contactable donors
     const segmentCounts = {
@@ -73,8 +69,6 @@ const DonorHealth = () => {
         segmentCounts['Lost']++;
       }
     });
-
-    console.log('[RFM] Segment distribution:', segmentCounts);
 
     // Create labels with counts for consistency
     const labelsWithCounts = Object.entries(segmentCounts).map(([name, count]) => `${name} (${count})`);
@@ -107,14 +101,8 @@ const DonorHealth = () => {
   // Prepare lapse risk breakdown data
   // Use filtered donors and exclude anonymous donors from lapse risk analysis
   const lapseRiskData = useMemo(() => {
-    console.log('[LAPSE RISK] Starting lapse risk calculation');
-    console.log('[LAPSE RISK] layer2 exists:', !!layer2);
-    console.log('[LAPSE RISK] lapse_risk_analysis exists:', !!layer2?.lapse_risk_analysis);
-    console.log('[LAPSE RISK] risk_distribution exists:', !!layer2?.lapse_risk_analysis?.risk_distribution);
-
     const filteredDonors = getFilteredDonors();
     if (!filteredDonors || filteredDonors.length === 0) {
-      console.log('[LAPSE RISK] No filtered donors available');
       return null;
     }
 
@@ -124,16 +112,12 @@ const DonorHealth = () => {
         .filter(donor => donor.is_anonymous !== true)
         .map(donor => donor.donor_id)
     );
-    console.log('[LAPSE RISK] Filtered contactable donor count:', filteredDonorIds.size);
 
     // Initialize risk counts
     let riskCounts = { low: 0, medium: 0, high: 0 };
 
     // APPROACH 1: Use risk_distribution from layer2 if available
     if (layer2?.lapse_risk_analysis?.risk_distribution) {
-      console.log('[LAPSE RISK] Using risk_distribution from layer2');
-      console.log('[LAPSE RISK] All-time risk_distribution:', layer2.lapse_risk_analysis.risk_distribution);
-
       // When using all-time data, we need to filter to only contactable donors
       // Since we don't have individual_risks, use the all-time distribution as-is
       // This is acceptable for "All Time" view, but will need refinement for date filters
@@ -145,7 +129,6 @@ const DonorHealth = () => {
     }
     // APPROACH 2: Fallback calculation from layer1 donor patterns
     else if (layer1?.donors) {
-      console.log('[LAPSE RISK] No risk_distribution found, calculating from layer1 donor data');
 
       // Calculate lapse risk based on donor behavior patterns
       const oneYearAgo = new Date();
@@ -182,18 +165,13 @@ const DonorHealth = () => {
             riskCounts.high++;
           }
         });
-
-      console.log('[LAPSE RISK] Calculated from donor patterns:', riskCounts);
     } else {
-      console.log('[LAPSE RISK] No data source available for lapse risk calculation');
       return null;
     }
 
     const total = riskCounts.low + riskCounts.medium + riskCounts.high;
-    console.log('[LAPSE RISK] Final risk counts:', riskCounts, 'Total:', total);
 
     if (total === 0) {
-      console.log('[LAPSE RISK] No risk data to display (all counts are 0)');
       return null;
     }
 
