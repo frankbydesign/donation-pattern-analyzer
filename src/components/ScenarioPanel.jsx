@@ -273,7 +273,7 @@ const ScenarioPanel = ({
           <h4 className="text-xs font-semibold text-slate-700 uppercase tracking-wide mb-3">
             Key Assumptions
           </h4>
-          <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm">
             <div>
               <p className="text-slate-500 text-xs">Average Gift</p>
               <p className="font-mono font-semibold text-slate-900">${baseline.avgGift.toFixed(0)}</p>

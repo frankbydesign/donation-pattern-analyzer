@@ -566,18 +566,18 @@ const TemporalTrends = () => {
 
         {/* Heatmap View */}
         {retentionView === 'heatmap' && (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto -mx-6 px-6">
             <div className="inline-block min-w-full">
               {/* Header Row */}
-              <div className="flex items-center mb-2">
-                <div className="w-32 px-3 py-2">
+              <div className="flex items-center mb-2 min-w-max">
+                <div className="w-32 px-3 py-2 flex-shrink-0">
                   <span className="text-xs font-semibold text-slate-700 uppercase">Cohort</span>
                 </div>
-                <div className="w-24 px-3 py-2">
+                <div className="w-24 px-3 py-2 flex-shrink-0">
                   <span className="text-xs font-semibold text-slate-700 uppercase">Acquired</span>
                 </div>
                 {[1, 2, 3, 4, 5].map(yearNum => (
-                  <div key={yearNum} className="w-24 px-3 py-2 text-center">
+                  <div key={yearNum} className="w-24 px-3 py-2 text-center flex-shrink-0">
                     <span className="text-xs font-semibold text-slate-700 uppercase">Year {yearNum}</span>
                   </div>
                 ))}
@@ -585,9 +585,9 @@ const TemporalTrends = () => {
 
               {/* Data Rows */}
               {cohortRetentionData.cohorts.map((cohort, index) => (
-                <div key={cohort.cohortYear} className="flex items-center mb-1">
+                <div key={cohort.cohortYear} className="flex items-center mb-1 min-w-max">
                   {/* Cohort Year + Size */}
-                  <div className="w-32 px-3 py-2">
+                  <div className="w-32 px-3 py-2 flex-shrink-0">
                     <button
                       onClick={() => handleCohortClick(cohort.cohortYear)}
                       className="text-sm font-semibold text-indigo-600 hover:text-indigo-800 hover:underline"
@@ -595,7 +595,7 @@ const TemporalTrends = () => {
                       {cohort.cohortYear}
                     </button>
                   </div>
-                  <div className="w-24 px-3 py-2">
+                  <div className="w-24 px-3 py-2 flex-shrink-0">
                     <span className="text-xs text-slate-600">{cohort.acquired.toLocaleString()}</span>
                   </div>
 
@@ -606,7 +606,7 @@ const TemporalTrends = () => {
                     const retentionYear = parseInt(cohort.cohortYear) + yearNum;
 
                     return (
-                      <div key={yearNum} className="w-24 px-1 py-1">
+                      <div key={yearNum} className="w-24 px-1 py-1 flex-shrink-0">
                         {rate !== undefined ? (
                           <button
                             onClick={() => handleRetentionCellClick(cohort.cohortYear, yearNum)}
