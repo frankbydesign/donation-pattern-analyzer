@@ -103,4 +103,4 @@ This project is configured to deploy to GitHub Pages:
 ## Author
 
 Frank Brockmann  
-[Portfolio](https://frankbydesign.github.io/frankbrockmann/) | [LinkedIn](https://linkedin.com/in/frankbrockmann)
+[LinkedIn](https://linkedin.com/in/frankbrockmann)
