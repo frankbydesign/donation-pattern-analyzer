@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import useDataStore from '../../store/dataStore';
 import { ChartCard, BarChart, DoughnutChart } from '../charts';
 import { colors } from '../../config/chartDefaults';
@@ -21,6 +21,22 @@ const ExecutiveSummary = () => {
     getTopDonorsByValue,
     getDateRangeLabel
   } = useDataStore();
+
+  // Track which insights are expanded (default: all collapsed)
+  const [expandedInsights, setExpandedInsights] = useState(new Set());
+
+  // Toggle insight expansion
+  const toggleInsight = (index) => {
+    setExpandedInsights(prev => {
+      const next = new Set(prev);
+      if (next.has(index)) {
+        next.delete(index);
+      } else {
+        next.add(index);
+      }
+      return next;
+    });
+  };
 
   // Calculate metrics for both filtered and all-time data
   const metrics = useMemo(() => {
@@ -648,31 +664,44 @@ const ExecutiveSummary = () => {
               };
 
               const config = severityConfig[insight.severity];
+              const isExpanded = expandedInsights.has(index);
 
               return (
                 <div
                   key={index}
-                  className={`${config.bgColor} ${config.borderColor} border rounded-lg p-4`}
+                  className={`${config.bgColor} ${config.borderColor} border rounded-lg p-4 cursor-pointer transition-all hover:shadow-md`}
                   onClick={(e) => {
+                    // Check if clicking on an embedded action link
                     const action = e.target.getAttribute('data-action');
                     if (action === 'high-risk') {
                       handleHighRiskClick();
+                      return;
                     } else if (action === 'top-donors') {
                       handleTopDonorsClick();
+                      return;
                     }
+                    // Otherwise toggle the insight
+                    toggleInsight(index);
                   }}
                 >
                   <div className="flex items-start gap-3">
                     <div className={`w-2 h-2 ${config.dotColor} rounded-full mt-2 flex-shrink-0`}></div>
                     <div className="flex-1 min-w-0">
-                      <p
-                        className={`text-sm font-medium ${config.textColor} mb-1`}
-                        dangerouslySetInnerHTML={{ __html: makeInsightClickable(insight.finding, insight) }}
-                      />
-                      <p className={`text-sm ${config.labelColor}`}>
-                        <span className="font-semibold">→ </span>
-                        {insight.action}
-                      </p>
+                      <div className="flex items-start justify-between gap-2">
+                        <p
+                          className={`text-sm font-medium ${config.textColor} ${isExpanded ? 'mb-1' : ''}`}
+                          dangerouslySetInnerHTML={{ __html: makeInsightClickable(insight.finding, insight) }}
+                        />
+                        <span className={`text-sm ${config.textColor} flex-shrink-0 select-none`}>
+                          {isExpanded ? '▲' : '▼'}
+                        </span>
+                      </div>
+                      {isExpanded && (
+                        <p className={`text-sm ${config.labelColor} mt-2`}>
+                          <span className="font-semibold">→ </span>
+                          {insight.action}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
